@@ -1,7 +1,7 @@
 "use client";
 
 // Extra stage dressing around the DJ booth: a lighting truss with moving-head spots,
-// an LED stage skirt, chasing edge lights, and two go-go podiums with dancers.
+// an LED stage skirt, chasing edge lights, go-go podiums, and a back row of dancers.
 // Everything here lives in the booth's local space (stage centre at the origin, top at y = 0.5).
 
 import { useMemo, useRef } from "react";
@@ -274,7 +274,7 @@ function jeansDancer(x: number, z: number, name: string, skin: string, hairColor
     look: {
       gender: "f" as const,
       figure: "slim" as const,
-      hair: "bun" as const,
+      hair: "long" as const,
       top: "bikini" as const,
       bottom: "pants" as const,
       boots: false,
@@ -298,7 +298,7 @@ const DANCERS: { x: number; z?: number; name: string; look: Look; light: string 
     look: {
       gender: "f",
       figure: "slim",
-      hair: "pony",
+      hair: "long",
       top: "bikini",
       bottom: "bikini",
       boots: true,
@@ -339,8 +339,22 @@ const DANCERS: { x: number; z?: number; name: string; look: Look; light: string 
   maleDancer(7.2, 0.8, "BÌNH BU BÁM", "#e6b48a", "#eceaf2", "#f0ede6", "#1c1c20", "#a66bff"),
 ];
 
+const BACK_ROW_DANCERS = [
+  maleDancer(-3.3, -1.5, "TUẤN TIỀN TỶ", "#f2c9a5", "#2a211c", "#34507e", "#f5f5f0", "#ff2bd6", { chain: true }),
+  maleDancer(-4.6, -1.5, "VŨ VƠ VÉT", "#e6b48a", "#1d1a1f", "#a33c5b", "#f5f5f0", "#ffe600"),
+  maleDancer(-5.9, -1.5, "TÙNG TÍ TỬNG", "#d9a37c", "#eceaf2", "#276a65", "#1c1c20", "#00e5ff", { chain: true }),
+  maleDancer(-7.2, -1.5, "NAM NÔ NỨC", "#6b3f2a", "#3b2618", "#6c4a91", "#f5f5f0", "#7cff4f"),
+  maleDancer(3.3, -1.5, "VIỆT VẶN VẸO", "#eec09a", "#1d1a1f", "#a33c5b", "#1c1c20", "#00e5ff"),
+  maleDancer(4.6, -1.5, "PHONG PHỦ PHÀNG", "#f6d2b4", "#2a211c", "#34507e", "#f5f5f0", "#a66bff", { chain: true }),
+  maleDancer(5.9, -1.5, "VINH VỘI VÃ", "#d9a37c", "#eceaf2", "#276a65", "#1c1c20", "#ff3b5c"),
+  maleDancer(7.2, -1.5, "SINH SUNG SỨC", "#e6b48a", "#3b2618", "#6c4a91", "#f5f5f0", "#ffe600", { chain: true }),
+];
+
 const PODIUM_H = 0.6;
+const BACK_ROW_PODIUM_H = 1.4;
 const STAGE_TOP = 0.5;
+const BACK_ROW_Z = -1.5;
+const BACK_ROW_PLATFORM_WIDTH = 5.5;
 
 function GogoPodium({ x, z = 1.4, name, look, light, seed }: { x: number; z?: number; name: string; look: Look; light: string; seed: number }) {
   const rig = useMemo(() => {
@@ -381,7 +395,6 @@ function GogoPodium({ x, z = 1.4, name, look, light, seed }: { x: number; z?: nu
 
   return (
     <group position={[x, STAGE_TOP, z]}>
-      {/* podium */}
       <mesh position={[0, PODIUM_H / 2, 0]}>
         <cylinderGeometry args={[0.55, 0.62, PODIUM_H, 32]} />
         <meshStandardMaterial color="#14101c" metalness={0.7} roughness={0.3} />
@@ -404,6 +417,68 @@ function GogoPodium({ x, z = 1.4, name, look, light, seed }: { x: number; z?: nu
   );
 }
 
+function BackRowPlatform({ x, color }: { x: number; color: string }) {
+  const width = BACK_ROW_PLATFORM_WIDTH;
+  const depth = 1.5;
+  return (
+    <group position={[x, STAGE_TOP, BACK_ROW_Z]}>
+      <mesh position={[0, BACK_ROW_PODIUM_H / 2, 0]}>
+        <boxGeometry args={[width, BACK_ROW_PODIUM_H, depth]} />
+        <meshStandardMaterial color="#14101c" metalness={0.75} roughness={0.3} />
+      </mesh>
+      <mesh position={[0, BACK_ROW_PODIUM_H + 0.025, 0]}>
+        <boxGeometry args={[width - 0.12, 0.05, depth - 0.12]} />
+        <meshStandardMaterial color="#292334" metalness={0.55} roughness={0.35} />
+      </mesh>
+      <mesh position={[0, 0.38, depth / 2 + 0.02]}>
+        <boxGeometry args={[width - 0.08, 0.08, 0.035]} />
+        <meshBasicMaterial color={color} toneMapped={false} />
+      </mesh>
+      <mesh position={[0, BACK_ROW_PODIUM_H + 0.055, depth / 2 - 0.04]}>
+        <boxGeometry args={[width - 0.18, 0.035, 0.04]} />
+        <meshBasicMaterial color={color} toneMapped={false} />
+      </mesh>
+    </group>
+  );
+}
+
+function BackRowDancer({ x, name, look, light, seed }: { x: number; name: string; look: Look; light: string; seed: number }) {
+  const rig = useMemo(() => createRig(look), [look]);
+  const dancer = useRef<THREE.Group>(null);
+  useStageTag(dancer, name, light);
+  useFigure(rig, look.palette);
+  const spotMat = useMemo(() => {
+    const material = beamMaterial(0.3);
+    material.color.set(light);
+    return material;
+  }, [light]);
+  const spotGeo = useMemo(() => {
+    const geometry = new THREE.CylinderGeometry(0.08, 0.75, 4.2, 20, 1, true);
+    geometry.translate(0, -2.1, 0);
+    return geometry;
+  }, []);
+
+  useFrame(() => {
+    const dropping = pulse.drop > 0.2;
+    const dancerOffset = Math.floor(seed);
+    const flashmobStart = Math.floor(useClub.getState().dropAt);
+    const style = dropping
+      ? FLASHMOB_DANCES[(flashmobStart + dancerOffset) % FLASHMOB_DANCES.length]
+      : GOGO_DANCES[(Math.floor(pulse.beat / 8) + dancerOffset) % GOGO_DANCES.length];
+    poseRig(rig, { time: pulse.time, phase: pulse.phase, beat: pulse.beat, energy: 0.85, style, seed: 0 });
+    spotMat.opacity = 0.16 + pulse.kick * 0.25;
+  }, POSE_PRIORITY);
+
+  return (
+    <group position={[x, STAGE_TOP, BACK_ROW_Z]}>
+      <group ref={dancer} position={[0, BACK_ROW_PODIUM_H, 0]} rotation-y={-Math.sign(x) * 0.2}>
+        <primitive object={rig.root} />
+      </group>
+      <mesh geometry={spotGeo} material={spotMat} position={[0, BACK_ROW_PODIUM_H + 4.3, 0]} raycast={() => null} />
+    </group>
+  );
+}
+
 export function StageExtras() {
   return (
     <group>
@@ -413,6 +488,11 @@ export function StageExtras() {
       <EdgeLights />
       {DANCERS.map((d, i) => (
         <GogoPodium key={d.x} x={d.x} z={d.z} name={d.name} look={d.look} light={d.light} seed={i * 0.17} />
+      ))}
+      <BackRowPlatform x={-5.25} color="#ff2bd6" />
+      <BackRowPlatform x={5.25} color="#00e5ff" />
+      {BACK_ROW_DANCERS.map((d, i) => (
+        <BackRowDancer key={d.name} x={d.x} name={d.name} look={d.look} light={d.light} seed={i} />
       ))}
     </group>
   );

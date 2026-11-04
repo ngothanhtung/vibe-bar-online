@@ -54,7 +54,7 @@ const CREW: CrewMember[] = [
     },
   },
   {
-    name: "MC HUẤN HÍ HỬNG",
+    name: "MC HUẤN HĂNG HÁI",
     role: "mc",
     x: 0,
     seed: 0.1,
@@ -69,7 +69,7 @@ const CREW: CrewMember[] = [
       chain: true,
       bow: false,
       blush: false,
-      palette: { ...PALETTE_BASE, skin: "#d9a37c", hair: "#1d1a1f", outfit: "#ffe600", accent: "#ff3b5c", pants: "#2b3346", shoe: "#f5f5f0" },
+      palette: { ...PALETTE_BASE, skin: "#6b3f2a", hair: "#1d1a1f", outfit: "#ffe600", accent: "#ff3b5c", pants: "#2b3346", shoe: "#f5f5f0" },
     },
   },
   {
@@ -430,29 +430,6 @@ function BoothPanel() {
   );
 }
 
-/** Vertical LED tubes flanking the booth. */
-function LightTubes() {
-  const mats = useRef<THREE.MeshBasicMaterial[]>([]);
-  useFrame(() => {
-    mats.current.forEach((m, i) => {
-      if (!m) return;
-      const on = ((pulse.beat + i) % 4 === 0 ? 0.6 : 0.25) + pulse.kick * 0.3 + pulse.drop * 0.3;
-      m.color.setHSL((pulse.time * 0.1 + i * 0.12) % 1, 1, Math.min(0.75, on));
-    });
-  });
-  const xs = [-2.75, -2.45, 2.45, 2.75];
-  return (
-    <>
-      {xs.map((x, i) => (
-        <mesh key={x} position={[x, 2.0, 0.2]}>
-          <cylinderGeometry args={[0.035, 0.035, 2.8, 10]} />
-          <meshBasicMaterial ref={(m) => { if (m) mats.current[i] = m; }} toneMapped={false} />
-        </mesh>
-      ))}
-    </>
-  );
-}
-
 /** Wedge monitors on the stage lip, facing the performers. */
 function Monitors() {
   return (
@@ -610,7 +587,6 @@ export function DJBooth() {
         </group>
       ))}
       <Laptop x={0} />
-      <LightTubes />
       <Monitors />
       <Co2Jets />
       <SparkFountains />
