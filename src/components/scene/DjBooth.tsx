@@ -102,7 +102,7 @@ function Performer({ member }: { member: CrewMember }) {
 
   useFigure(rig, member.look.palette);
   const group = useRef<THREE.Group>(null);
-  useStageTag(group, member.name, member.gear);
+  useStageTag(group, member.name, member.gear, undefined, 2);
 
   useFrame(() => {
     const dropping = pulse.drop > 0.2;

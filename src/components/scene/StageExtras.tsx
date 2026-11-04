@@ -370,7 +370,7 @@ function GogoPodium({ x, z = 1.4, name, look, light, seed, figureScale = 1 }: { 
   }, [look]);
   const ring = useRef<THREE.MeshBasicMaterial>(null);
   const dancer = useRef<THREE.Group>(null);
-  useStageTag(dancer, name, light);
+  useStageTag(dancer, name, light, undefined, 1);
   useFigure(rig, look.palette);
   const band = useRef<THREE.MeshBasicMaterial>(null);
   const spotMat = useMemo(() => {
@@ -470,7 +470,7 @@ function BackRowPlatform({ x, color }: { x: number; color: string }) {
 function BackRowDancer({ x, name, look, light, seed, figureScale = 1 }: { x: number; name: string; look: Look; light: string; seed: number; figureScale?: number }) {
   const rig = useMemo(() => createRig(look), [look]);
   const dancer = useRef<THREE.Group>(null);
-  useStageTag(dancer, name, light);
+  useStageTag(dancer, name, light, undefined, 1);
   useFigure(rig, look.palette);
   const spotMat = useMemo(() => {
     const material = beamMaterial(0.3);
