@@ -82,7 +82,7 @@ export const useClub = create<ClubState>((set, get) => ({
   myPos: { x: (Math.random() - 0.5) * 6, z: 1 + Math.random() * 2 },
   genre: "vinahouse",
   muted: false,
-  camFocus: "floor",
+  camFocus: "stage",
   pixelArt: false,
   yt: null,
   bpm: 124,
