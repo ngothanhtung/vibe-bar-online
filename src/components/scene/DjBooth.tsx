@@ -30,6 +30,7 @@ interface CrewMember {
   seed: number;
   gear: string; // headphone / mic accent color
   look: Look;
+  scale?: number;
 }
 
 const PALETTE_BASE = { eye: "#16121c", white: "#ffffff", blush: "#ff9db2", dark: "#141418", gold: "#f5c542", visor: "#7df9ff" };
@@ -56,16 +57,18 @@ const CREW: CrewMember[] = [
   {
     name: "MC HUẤN HĂNG HÁI",
     role: "mc",
+    scale: 1.08,
     x: 0,
     seed: 0.1,
     gear: "#ffe600",
     look: {
       gender: "m",
-      hair: "cap",
+      hair: "short",
+      hat: "fedora",
       top: "floral",
       bottom: "shorts",
       glasses: false,
-      shades: true,
+      shades: false,
       chain: true,
       bow: false,
       blush: false,
@@ -131,7 +134,7 @@ function Performer({ member }: { member: CrewMember }) {
   }, POSE_PRIORITY);
 
   return (
-    <group ref={group} position={[member.x, 0.8, -0.3]}>
+    <group ref={group} position={[member.x, 0.8, -0.3]} scale={member.scale ?? 1}>
       <primitive object={rig.root} />
       {member.role === "dj" ? <Headphones rig={rig} color={member.gear} /> : <Mic rig={rig} color={member.gear} />}
     </group>

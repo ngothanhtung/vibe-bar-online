@@ -11,10 +11,12 @@ export type PartKey =
   | "hair"
   | "spikes"
   | "hairBack"
+  | "braids"
   | "bun"
   | "pony"
   | "capDome"
   | "capBrim"
+  | "fedora"
   | "bow"
   | "eye"
   | "mouth"
@@ -61,7 +63,7 @@ export type PartKey =
 export type Slot = "skin" | "hair" | "eye" | "white" | "blush" | "outfit" | "accent" | "pants" | "shoe" | "dark" | "gold" | "visor";
 
 export const PART_KEYS: PartKey[] = [
-  "head", "hair", "spikes", "hairBack", "bun", "pony", "capDome", "capBrim", "bow", "eye", "mouth", "blush", "glasses", "shades",
+  "head", "hair", "spikes", "hairBack", "braids", "bun", "pony", "capDome", "capBrim", "fedora", "bow", "eye", "mouth", "blush", "glasses", "shades",
   "bucketHat", "headband", "catEar", "chain", "flower", "shirtFront", "bowtie", "cape", "emblem", "domino", "helmet", "visor", "core",
   "hoodTop", "hoodLow", "sash", "torso", "torsoSlim", "bikiniTopSlim", "bikiniTri", "qipao", "mandarin", "placket", "cropTop", "bikiniTop", "bikiniBottom", "dress", "skirt", "hood", "pelvis", "upperArm", "forearm", "hand", "thigh", "shin", "foot", "cup",
 ];
@@ -217,6 +219,18 @@ export function partGeometries() {
       g.translate(0, HEAD.y - 0.12, -0.15);
       return g;
     })(),
+    braids: (() => {
+      const sections: THREE.BufferGeometry[] = [];
+      for (const side of [-1, 1]) {
+        for (let i = 0; i < 8; i++) {
+          const bead = ellipsoid(0.048, 0.065, 0.05, 12);
+          const offset = i % 2 === 0 ? -0.018 : 0.018;
+          bead.translate(side * (0.19 + offset), HEAD.y + 0.13 - i * 0.075, -0.22 - i * 0.012);
+          sections.push(bead);
+        }
+      }
+      return mergeGeoms(sections);
+    })(),
     bun: (() => {
       const g = ellipsoid(0.095, 0.09, 0.095, 16);
       g.translate(0, HEAD.y + 0.27, -0.04);
@@ -234,6 +248,15 @@ export function partGeometries() {
       g.scale(1, 1, 1.15);
       g.translate(0, HEAD.y + 0.08, 0.2);
       return g;
+    })(),
+    fedora: (() => {
+      const brim = new THREE.CylinderGeometry(0.33, 0.33, 0.035, 32);
+      brim.translate(0, HEAD.y + 0.13, 0);
+      const crown = new THREE.CylinderGeometry(0.17, 0.2, 0.2, 24);
+      crown.translate(0, HEAD.y + 0.24, 0);
+      const top = new THREE.CylinderGeometry(0.17, 0.17, 0.025, 24);
+      top.translate(0, HEAD.y + 0.35, 0);
+      return mergeGeoms([brim, crown, top]);
     })(),
     bow: (() => {
       const l = ellipsoid(0.06, 0.045, 0.028, 12);
@@ -524,11 +547,12 @@ export interface Look {
   figure?: "regular" | "slim";
   /** Cut of a bikini bottom: the default band, or a triangle cut. */
   bikiniCut?: "band" | "tri";
-  hat?: "none" | "bucket" | "snapback" | "headband" | "catEars";
+  hat?: "none" | "bucket" | "snapback" | "headband" | "catEars" | "fedora";
   /** Original superhero costumes (not any real franchise's design). */
   costume?: "none" | "cape" | "armor" | "ninja";
   /** Spare randomness for small extras. */
   seedBits?: number;
+  braided?: boolean;
   palette: Palette;
 }
 
@@ -707,11 +731,13 @@ export function createRig(look: Look, opts: { cup?: boolean } = {}): Rig {
     }
     if (costume !== "ninja") {
       if (look.hair === "long") part(head, "hairBack", "hair");
+      if (look.braided) part(head, "braids", "hair");
       if (look.hair === "bun") part(head, "bun", "hair");
       if (look.hair === "pony") part(head, "pony", "hair");
       if (look.bow) part(head, "bow", "accent");
       if (look.hat === "bucket") part(head, "bucketHat", "accent");
       if (look.hat === "headband") part(head, "headband", "accent");
+      if (look.hat === "fedora") part(head, "fedora", "accent");
       if (look.hat === "catEars") {
         part(head, "catEar", "hair");
         part(head, "catEar", "hair", 0, 0, 0, Math.PI); // mirrored by a half turn
