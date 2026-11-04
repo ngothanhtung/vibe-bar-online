@@ -29,7 +29,7 @@ function Dancer({ index, x, z }: { index: number; x: number; z: number }) {
     // the front row shows off the hero costumes, the rest are random party-goers
     const color = AVATAR_COLORS[index % AVATAR_COLORS.length];
     let seed = randomLookSeed();
-    const want = index >= 12 && index < 15 ? COSTUMES[index - 12] : null;
+    const want = index < 3 ? COSTUMES[index] : null;
     for (let i = 0; want && i < 500 && (makeLook(seed, color).costume ?? "none") !== want; i++) seed = randomLookSeed();
     const look = makeLook(seed, color);
     const r = createRig(look);
@@ -52,7 +52,7 @@ function Dancer({ index, x, z }: { index: number; x: number; z: number }) {
 export default function Lineup() {
   const pixel = usePixelCanvas(false);
   return (
-    <Canvas dpr={pixel.dpr} camera={{ position: [0, 3.2, 7.5], fov: 45 }} style={{ position: "fixed", inset: 0, background: "#f3e9ff", ...pixel.style }}>
+    <Canvas dpr={pixel.dpr} camera={{ position: [0, 6.5, 9.5], fov: 50 }} style={{ position: "fixed", inset: 0, background: "#f3e9ff", ...pixel.style }}>
       <Clock />
       <ambientLight intensity={0.55} />
       <directionalLight position={[3, 6, 5]} intensity={1.6} />
@@ -61,9 +61,9 @@ export default function Lineup() {
         <meshStandardMaterial color="#e6d6fb" />
       </mesh>
       {DANCES.map((_, i) => (
-        <Dancer key={i} index={i} x={(i % 4) * 1.6 - 2.4} z={Math.floor(i / 4) * 1.5 - 2.6} />
+        <Dancer key={i} index={i} x={(i % 6) * 1.5 - 3.75} z={Math.floor(i / 6) * 1.6 - 4.2} />
       ))}
-      <OrbitControls target={[0, 0.7, -0.4]} />
+      <OrbitControls target={[0, 0.6, -0.6]} />
     </Canvas>
   );
 }

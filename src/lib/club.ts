@@ -20,7 +20,7 @@ import { engine } from "./audio";
 import { getFirebase } from "./firebase";
 import { ACTIONS, AVATAR_COLORS, BOT_NAMES, BOT_SHOUTS, randomOf, type ActionKind } from "./content";
 import { useClub, type Patron, type Shout, type Stats } from "./store";
-import { makeLook } from "@/components/scene/chibi";
+import { DANCES, makeLook } from "@/components/scene/chibi";
 
 const PRESENCE_TTL = 45_000;
 const STAT_KEY: Partial<Record<ActionKind, keyof Stats>> = {
@@ -304,7 +304,7 @@ function startDemo(): () => void {
     const moved = useClub.getState().patrons.map((b) => ({
       ...b,
       // now and then a bot commits to one dance for a while, then goes back to auto
-      dance: Math.random() < 0.08 ? (Math.random() < 0.5 ? -1 : Math.floor(Math.random() * 16)) : b.dance,
+      dance: Math.random() < 0.08 ? (Math.random() < 0.5 ? -1 : Math.floor(Math.random() * DANCES.length)) : b.dance,
     })).map((b) =>
       Math.random() < 0.35
         ? { ...b, x: Math.max(-9, Math.min(9, b.x + (Math.random() - 0.5) * 3)), z: Math.max(-2.5, Math.min(9.5, b.z + (Math.random() - 0.5) * 3)) }

@@ -306,7 +306,7 @@ function SeatedGuests({ stools }: { stools: { x: number; z: number; face: number
           return true;
         },
         6,
-        13,
+        16,
       );
       label.el.textContent = g.name;
       label.el.style.borderColor = g.palette.outfit;

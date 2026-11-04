@@ -37,7 +37,7 @@ const PALETTE_BASE = { eye: "#16121c", white: "#ffffff", blush: "#ff9db2", dark:
 /** Two DJs on the decks and an MC hyping the crowd in the middle. */
 const CREW: CrewMember[] = [
   {
-    name: "DJ ĐẠT ĐẬP ĐĨA",
+    name: "DJ ĐẠT ĐÚ ĐỞN",
     role: "dj",
     x: -1.55,
     seed: 0.05,
@@ -54,7 +54,7 @@ const CREW: CrewMember[] = [
     },
   },
   {
-    name: "MC MINH MÁU MÊ",
+    name: "MC MINH MÀU MÈ",
     role: "mc",
     x: 0,
     seed: 0.1,
@@ -73,7 +73,7 @@ const CREW: CrewMember[] = [
     },
   },
   {
-    name: "DJ TRANG TƯNG TỬNG",
+    name: "DJ TRÚC TRƠ TRẼN",
     role: "dj",
     x: 1.55,
     seed: 0.0,
@@ -572,14 +572,23 @@ function SparkFountains() {
 export function DJBooth() {
   return (
     <group position={[0, 0, -5]}>
-      {/* stage */}
-      <mesh position={[0, 0.25, 0]}>
-        <boxGeometry args={[6, 0.5, 3]} />
+      {/* stage: 16 m wide to match the truss, 4.5 m deep */}
+      <mesh position={[0, 0.25, -0.75]}>
+        <boxGeometry args={[16, 0.5, 4.5]} />
         <meshStandardMaterial color="#120a1c" metalness={0.5} roughness={0.4} />
+      </mesh>
+      {/* raised rear tier behind the DJs for depth */}
+      <mesh position={[0, 0.7, -2.3]}>
+        <boxGeometry args={[10, 0.4, 1.4]} />
+        <meshStandardMaterial color="#160d22" metalness={0.5} roughness={0.4} />
+      </mesh>
+      <mesh position={[0, 0.9, -1.595]}>
+        <boxGeometry args={[10, 0.03, 0.01]} />
+        <meshBasicMaterial color="#00e5ff" toneMapped={false} />
       </mesh>
       {/* stage lip light strip */}
       <mesh position={[0, 0.5, 1.505]}>
-        <boxGeometry args={[6, 0.03, 0.01]} />
+        <boxGeometry args={[16, 0.03, 0.01]} />
         <meshBasicMaterial color="#ff2bd6" toneMapped={false} />
       </mesh>
       {/* desk body + top */}

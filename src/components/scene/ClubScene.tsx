@@ -9,9 +9,13 @@ import { engine } from "@/lib/audio";
 import { useClub } from "@/lib/store";
 import { pulse } from "./pulse";
 import { updateSpectrum } from "./spectrum";
-import { BarCounter, DanceFloor, DiscoBall, LedScreen, MovingLights, Room, Speakers } from "./Venue";
+import { BarCounter, DanceFloor, LedScreen, MovingLights, Room } from "./Venue";
+import { FloorSideLeds, MirrorBalls } from "./Glitter";
 import { Lasers } from "./Lasers";
+import { PaSystem } from "./PaSystem";
 import { BarFurniture } from "./Furniture";
+import { Waiters } from "./Waiters";
+import { HipHopCypher } from "./HipHop";
 import { DJBooth } from "./DjBooth";
 import { Crowd, Patrons, useMovement } from "./People";
 import { ConfettiLayer, FloatingFxLayer } from "./Effects";
@@ -88,7 +92,7 @@ function ResponsiveCamera() {
 }
 
 const CAM_PRESETS = {
-  floor: { pos: new THREE.Vector3(0, 5.4, 15.5), target: new THREE.Vector3(0, 1.4, 2) },
+  floor: { pos: new THREE.Vector3(0, 7.2, 19.5), target: new THREE.Vector3(0, 1.2, 1.5) },
   stage: { pos: new THREE.Vector3(0.3, 3.4, 6.2), target: new THREE.Vector3(0, 2.8, -5.5) },
 };
 
@@ -127,12 +131,15 @@ function SceneContent() {
         <DanceFloor onPick={walkTo} />
         <LedScreen />
         <DJBooth />
-        <Speakers />
+        <PaSystem />
         <BarCounter />
         <BarFurniture />
-        <DiscoBall />
+        <Waiters />
+        <MirrorBalls />
+        <FloorSideLeds />
         <Lasers />
         <Crowd />
+        <HipHopCypher />
         <Patrons />
         <FloatingFxLayer />
         <ConfettiLayer />
@@ -142,10 +149,10 @@ function SceneContent() {
       <CameraFocus />
       <OrbitControls
         makeDefault
-        target={[0, 1.4, 2]}
+        target={[0, 1.2, 1.5]}
         enablePan={false}
         minDistance={2.5}
-        maxDistance={24}
+        maxDistance={28}
         minPolarAngle={0.6}
         maxPolarAngle={1.45}
         enableDamping
@@ -163,7 +170,7 @@ export default function ClubScene() {
   return (
     <Canvas
       dpr={pixel.dpr}
-      camera={{ position: [0, 5.4, 15.5], fov: 55 }}
+      camera={{ position: [0, 7.2, 19.5], fov: 55 }}
       gl={{ antialias: false, powerPreference: "high-performance", stencil: false }}
       style={{ position: "fixed", inset: 0, ...pixel.style }}
     >

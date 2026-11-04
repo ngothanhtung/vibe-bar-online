@@ -9,6 +9,7 @@ import { addLabel, removeLabel } from "./labels";
 import { POSE_PRIORITY, registerFigure, useFigure } from "./figures";
 import { createRig, FIGURE_HEIGHT, makeLook, poseRig, randomLookSeed, CHILL_DANCES, DANCES, FLASHMOB_DANCES, PARTY_DANCES, type DanceStyle, type Rig } from "./chibi";
 import { AVATAR_COLORS, nameDealer } from "@/lib/content";
+import { CYPHER } from "./HipHop";
 
 export const BOUNDS = { minX: -9.6, maxX: 9.6, minZ: -3.0, maxZ: 10 };
 export const clampX = (x: number) => Math.min(BOUNDS.maxX, Math.max(BOUNDS.minX, x));
@@ -56,10 +57,14 @@ export function Crowd({ count = 72 }: { count?: number }) {
     return Array.from({ length: count }, () => {
       // keep a lane in the middle of the floor free for real patrons
       let x = 0;
-      while (Math.abs(x) < 2.4) x = (Math.random() - 0.5) * 19;
+      let z = 0;
+      // keep a lane in the middle free for players, and leave room for the hip hop cypher
+      while (Math.abs(x) < 2.4 || Math.hypot(x - CYPHER.x, z - CYPHER.z) < CYPHER.r + 1.1) {
+        x = (Math.random() - 0.5) * 19;
+        z = -2.2 + Math.random() * 11.3;
+      }
       const look = makeLook(randomLookSeed(), AVATAR_COLORS[Math.floor(Math.random() * AVATAR_COLORS.length)]);
       const rig = createRig(look);
-      const z = -2.4 + Math.random() * 11.5;
       rig.root.position.set(x, 0, z);
       rig.root.rotation.y = Math.atan2(-x, -5 - z) + (Math.random() - 0.5) * 0.9; // roughly face the DJ
       rig.root.scale.setScalar((look.gender === "f" ? 0.92 : 0.98) + Math.random() * 0.1);
@@ -84,7 +89,7 @@ export function Crowd({ count = 72 }: { count?: number }) {
           return true;
         },
         6,
-        13,
+        16,
       );
       label.el.textContent = f.name;
       label.el.style.borderColor = f.palette.outfit;

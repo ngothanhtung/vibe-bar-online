@@ -31,6 +31,8 @@ class BeatEngine {
   private freqData!: Uint8Array<ArrayBuffer>;
   private timer: ReturnType<typeof setInterval> | null = null;
   private nextNoteTime = 0;
+  /** Audio-clock time of step 0 (the first kick); the beat grid counts from here. */
+  private beatOrigin = 0;
   private step = 0; // 16th-note counter
   private kickTimes: number[] = [];
   genre: Genre = "vinahouse";
@@ -45,6 +47,7 @@ class BeatEngine {
     if (this.playing) return;
     this.playing = true;
     this.nextNoteTime = ctx.currentTime + 0.1;
+    this.beatOrigin = this.nextNoteTime;
     this.step = 0;
     this.timer = setInterval(() => this.schedule(), 25);
   }
@@ -97,7 +100,10 @@ class BeatEngine {
     this.genre = g;
     // Restart the bar so the new groove lands on the one.
     this.step = 0;
-    if (this.ctx) this.nextNoteTime = this.ctx.currentTime + 0.05;
+    if (this.ctx) {
+      this.nextNoteTime = this.ctx.currentTime + 0.05;
+      this.beatOrigin = this.nextNoteTime;
+    }
   }
 
   private init() {
@@ -352,13 +358,23 @@ class BeatEngine {
 
   // ---------- analysis for visuals ----------
   /** 0..1, spikes on every scheduled kick and decays quickly. */
+  /**
+   * "Now" as heard: the audio clock minus the output latency, so visuals line up with the sound
+   * coming out of the speakers rather than with when it was scheduled.
+   */
+  private heardTime() {
+    const ctx = this.ctx!;
+    const latency = (ctx as AudioContext & { outputLatency?: number }).outputLatency || ctx.baseLatency || 0;
+    return ctx.currentTime - latency;
+  }
+
   kickEnvelope() {
     if (this.external) {
       const spb = 60 / this.external.bpm;
       return Math.exp(-this.externalPhase() * spb * 7);
     }
     if (!this.ctx || !this.playing) return 0;
-    const now = this.ctx.currentTime;
+    const now = this.heardTime();
     let last = -Infinity;
     for (const k of this.kickTimes) if (k <= now && k > last) last = k;
     if (last === -Infinity) return 0;
@@ -370,7 +386,8 @@ class BeatEngine {
     if (this.external) return this.externalPhase();
     if (!this.ctx || !this.playing) return (performance.now() / 500) % 1;
     const spb = 60 / GENRES[this.genre].bpm;
-    return (this.ctx.currentTime / spb) % 1;
+    const beats = (this.heardTime() - this.beatOrigin) / spb;
+    return ((beats % 1) + 1) % 1; // aligned so 0 is exactly on a kick
   }
 
   /**

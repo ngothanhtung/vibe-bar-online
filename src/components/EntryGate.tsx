@@ -56,7 +56,7 @@ export default function EntryGate({ onEnter }: { onEnter: (name: string, color: 
         }}
       >
         <p className="text-center text-xs uppercase tracking-[0.35em] text-cyan-300/80">Đi chùa online thì có rồi…</p>
-        <h1 className="neon-title mt-2 text-center text-5xl sm:text-6xl">QUẨY BAR</h1>
+        <h1 className="neon-title led-blink mt-2 text-center text-5xl sm:text-6xl">VIBE BAR</h1>
         <p className="mt-1 text-center font-display text-lg text-fuchsia-300">ONLINE</p>
         <p className="mt-4 text-center text-sm opacity-80">
           Gọi bia, cụng ly, bắn pháo giấy, xin quẻ đêm nay — quẩy cùng cả nước mà không cần ra khỏi nhà.

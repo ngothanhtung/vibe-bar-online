@@ -42,6 +42,25 @@ body {
   96% { opacity: 0.7; }
 }
 
+/* LED sign: colours cycle through the rainbow and the letters blink like bulbs */
+.led-blink {
+  animation:
+    flicker 4s infinite,
+    led-hue 3s linear infinite,
+    led-pulse 0.97s steps(1) infinite;
+}
+@keyframes led-hue {
+  from { filter: hue-rotate(0deg) saturate(1.4); }
+  to { filter: hue-rotate(360deg) saturate(1.4); }
+}
+@keyframes led-pulse {
+  0%, 100% { opacity: 1; }
+  12% { opacity: 0.55; }
+  20% { opacity: 1; }
+  50% { opacity: 0.85; }
+  62% { opacity: 1; }
+}
+
 .glass {
   background: rgba(14, 6, 26, 0.55);
   border: 1px solid rgba(255, 255, 255, 0.12);
@@ -158,6 +177,17 @@ body {
   letter-spacing: 0.04em;
   text-transform: uppercase;
 }
+.nametag.staff {
+  padding: 1px 8px;
+  border-color: #f2a516;
+  background: rgba(20, 14, 6, 0.7);
+  color: #ffe2a3;
+  font-size: 11px;
+}
+.nametag.hiphop {
+  background: rgba(10, 10, 14, 0.75);
+  font-weight: 800;
+}
 .nametag.me {
   background: rgba(255, 43, 214, 0.35);
   font-size: 15px;
@@ -187,5 +217,5 @@ body {
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .neon-title, .drop-flash, .drop-text, .feed-item, .fortune-card { animation: none; }
+  .neon-title, .led-blink, .drop-flash, .drop-text, .feed-item, .fortune-card { animation: none; }
 }

@@ -12,6 +12,9 @@ const peaks = new Float32Array(BANDS);
 const peakHold = new Float32Array(BANDS);
 const data = new Uint8Array(BANDS * 4);
 
+/** Smoothed band levels (0..1), readable on the CPU by anything that wants to dance to the EQ. */
+export const spectrumLevels = smooth;
+
 export const spectrumTexture = new THREE.DataTexture(data, BANDS, 1, THREE.RGBAFormat);
 spectrumTexture.minFilter = spectrumTexture.magFilter = THREE.NearestFilter;
 spectrumTexture.needsUpdate = true;

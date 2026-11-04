@@ -49,14 +49,14 @@ export const MALE_NAMES = [
 ];
 export const FEMALE_NAMES = [
   "Lan Lả Lướt", "Phương Phiêu Phiêu", "Thảo Thả Thính", "Trang Tưng Tửng", "Mai Mê Mẩn", "Ngọc Ngơ Ngác",
-  "Linh Lung Linh", "Vy Vui Vẻ", "Yến Yểu Điệu", "Hoa Hấp Háy", "Chi Chanh Chua", "Nhung Nhún Nhảy",
+  "Linh Lung Linh", "Vy Vui Vẻ", "Yến Yểu Điệu", "Hoa Hấp Háy", "Chi Chanh Chua", "Chi Chanh Chua",
   "Loan Lắc Lư", "Quỳnh Quay Quắt", "Mỹ Mê Mải", "Trâm Trầm Trồ", "Hạnh Hóng Hớt", "Nga Ngả Nghiêng",
   "Thu Thướt Tha", "Hằng Hớn Hở", "Diệu Dịu Dàng", "Xuân Xinh Xắn", "Kim Kiêu Kỳ", "Tuyết Tung Tăng",
 ];
 export const TREND_NAMES = [...MALE_NAMES, ...FEMALE_NAMES];
 
 /** Names already taken by the people on stage. */
-export const STAGE_NAMES = ["Trang Tưng Tửng", "Nhung Nhún Nhảy", "Lan Lả Lướt"];
+export const STAGE_NAMES = ["Chi Chanh Chua", "Lan Lả Lướt", "Hương Hóng Hớt", "Linh Lí Lắc", "Cường Cay Cú", "Bình Bu Bám"];
 
 type G = "m" | "f";
 const poolFor = (g: G) => (g === "m" ? MALE_NAMES : FEMALE_NAMES).filter((n) => !STAGE_NAMES.includes(n));
@@ -79,6 +79,50 @@ export const randomTrendName = (g?: G) => {
   const pool = g ? poolFor(g) : TREND_NAMES;
   return pool[Math.floor(Math.random() * pool.length)];
 };
+
+/** Ready-made shout-outs in Gen Z club slang, for the 🎲 button next to the chat box. */
+export const SHOUT_IDEAS = [
+  "Quẩy lên anh em ơiii 🔥",
+  "Hôm nay không say không về 🍻",
+  "Ai ế ra đây quẩy chung nè 💃",
+  "Nhạc này cháy quá DJ ơi 🔥",
+  "Một, hai, ba, DZÔ! 🥂",
+  "Mai tính, nay quẩy 😎",
+  "Đỉnh nóc, kịch trần, bay phấp phới 🚀",
+  "Slay quá trời slay 💅",
+  "Chill thôi, đừng drama 😌",
+  "Lên mood rồi nha 🎶",
+  "Xin vía crush tối nay 🙏",
+  "Bàn bên ơi, quẩy chung không? 👀",
+  "Hết nước chấm luôn 🤌",
+  "Vibe hôm nay 10 điểm không có nhưng 💯",
+  "Tới công chuyện luôn 💪",
+  "Còn thở là còn quẩy 💨",
+  "Gen Z không ngủ sớm 🌙",
+  "Đi bar mà như đi concert 🎤",
+  "Drop đi DJ ơi, đợi lâu quá 😭",
+  "Ét ô ét, cháy máy rồi 🆘",
+  "Flex nhẹ cái outfit 👟",
+  "Nhảy cho đời bớt deadline 📅",
+  "Khum say, chỉ hơi phê 🥴",
+  "Ủa alo, nhạc hay vậy trời 📞",
+  "Quá dữ, quá ghê, quá đỉnh 😱",
+  "Đêm nay ai về trước là thua 🏆",
+  "Quẩy hết mình, mai hết tiền 💸",
+  "Cụng ly cái cho tình thân 🍻",
+  "Vũ trụ gửi tín hiệu: quẩy đi! 🛸",
+  "Chất như nước cất 💧",
+  "Trend gì cũng quẩy được 🕺",
+  "Bùng nổ đi nào 💥",
+  "Ai nghe bài này mà không lắc là sai 🙅",
+  "Real quá anh em ơi 🗿",
+  "Mood tụt? Lên nhạc là hết 🎚️",
+  "Hông ai cản được tui đâu 🏃",
+  "Uống có trách nhiệm, quẩy có tâm 🫡",
+  "Đã uống rượu bia thì không lái xe 🚕",
+  "DJ ơi cho xin bài nữa đi mà 🥺",
+  "Vibe Bar số một, không bàn cãi ✨",
+];
 
 export const BOT_SHOUTS = [
   "DJ ơi lên nhạc đi!!!",

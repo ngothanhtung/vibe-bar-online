@@ -38,6 +38,12 @@ export type PartKey =
   | "hoodLow"
   | "sash"
   | "torso"
+  | "torsoSlim"
+  | "bikiniTopSlim"
+  | "bikiniTri"
+  | "qipao"
+  | "mandarin"
+  | "placket"
   | "cropTop"
   | "bikiniTop"
   | "bikiniBottom"
@@ -57,7 +63,7 @@ export type Slot = "skin" | "hair" | "eye" | "white" | "blush" | "outfit" | "acc
 export const PART_KEYS: PartKey[] = [
   "head", "hair", "spikes", "hairBack", "bun", "pony", "capDome", "capBrim", "bow", "eye", "mouth", "blush", "glasses", "shades",
   "bucketHat", "headband", "catEar", "chain", "flower", "shirtFront", "bowtie", "cape", "emblem", "domino", "helmet", "visor", "core",
-  "hoodTop", "hoodLow", "sash", "torso", "cropTop", "bikiniTop", "bikiniBottom", "dress", "skirt", "hood", "pelvis", "upperArm", "forearm", "hand", "thigh", "shin", "foot", "cup",
+  "hoodTop", "hoodLow", "sash", "torso", "torsoSlim", "bikiniTopSlim", "bikiniTri", "qipao", "mandarin", "placket", "cropTop", "bikiniTop", "bikiniBottom", "dress", "skirt", "hood", "pelvis", "upperArm", "forearm", "hand", "thigh", "shin", "foot", "cup",
 ];
 
 // Proportions: about three heads tall, the head as wide as the shoulders.
@@ -374,6 +380,64 @@ export function partGeometries() {
       TORSO_DEPTH,
     ),
     // sleeveless top flaring into a bell skirt down to the knees
+    // slimmer, hourglass body: narrower waist, natural chest and hips
+    torsoSlim: lathe(
+      [[0.0, -0.02], [0.16, -0.02], [0.172, 0.03], [0.14, 0.12], [0.135, 0.16], [0.16, 0.24], [0.162, 0.29], [0.15, 0.33], [0.11, 0.355], [0.0, 0.362]],
+      TORSO_DEPTH,
+    ),
+    bikiniTopSlim: lathe([[0.157, 0.215], [0.165, 0.222], [0.166, 0.288], [0.16, 0.295]], TORSO_DEPTH),
+    // qipao (sườn xám): a fitted sheath to just above the knee, hugging the slim waist
+    qipao: lathe(
+      [[0.0, -0.36], [0.205, -0.36], [0.195, -0.24], [0.19, -0.12], [0.188, -0.02], [0.17, 0.06], [0.145, 0.13], [0.14, 0.165], [0.165, 0.24], [0.167, 0.29], [0.154, 0.33], [0.114, 0.357], [0.0, 0.366]],
+      TORSO_DEPTH,
+    ),
+    // standing mandarin collar
+    mandarin: (() => {
+      const g = new THREE.CylinderGeometry(0.082, 0.09, 0.07, 22, 1, true);
+      g.translate(0, TORSO_H + 0.015, 0);
+      return g;
+    })(),
+    // diagonal placket from the collar to the right armpit, with two frog-button knots
+    placket: (() => {
+      const cx = -0.11;
+      const cy = TORSO_H - 0.03;
+      const arc = new THREE.TorusGeometry(0.11, 0.009, 5, 18, Math.PI / 2);
+      arc.rotateZ(-Math.PI / 2);
+      arc.translate(cx, cy, 0);
+      const knots = [-0.35, -1.05].map((a) => {
+        const k = new THREE.SphereGeometry(0.016, 8, 6);
+        k.translate(cx + Math.cos(a) * 0.11, cy + Math.sin(a) * 0.11, 0.008);
+        return k;
+      });
+      const g = mergeGeoms([arc, ...knots]);
+      g.translate(0, 0, 0.167 * TORSO_DEPTH);
+      g.computeVertexNormals();
+      return g;
+    })(),
+    // triangle-cut bikini bottom: thin string around the hips, a triangle panel front and back
+    bikiniTri: (() => {
+      const string = new THREE.TorusGeometry(0.174, 0.007, 5, 32);
+      string.rotateX(Math.PI / 2);
+      string.scale(1, 1, TORSO_DEPTH);
+      string.translate(0, 0.005, 0);
+      const tri = (back: boolean) => {
+        const shape = new THREE.Shape();
+        shape.moveTo(-0.09, 0);
+        shape.lineTo(0.09, 0);
+        shape.lineTo(0.022, -0.085);
+        shape.lineTo(-0.022, -0.085);
+        shape.closePath();
+        const g = new THREE.ExtrudeGeometry(shape, { depth: 0.008, bevelEnabled: false });
+        g.translate(0, 0.008, 0);
+        g.rotateX(back ? -0.12 : 0.12); // follow the curve of the hips
+        if (back) g.rotateY(Math.PI);
+        g.translate(0, 0, (back ? -1 : 1) * (0.176 * TORSO_DEPTH + 0.002));
+        return g.toNonIndexed();
+      };
+      const g = mergeGeoms([string, tri(false), tri(true)]);
+      g.computeVertexNormals();
+      return g;
+    })(),
     // swimsuit pieces: a band over the chest and a band over the hips
     bikiniTop: lathe([[0.18, 0.2], [0.183, 0.205], [0.184, 0.29], [0.18, 0.295]], TORSO_DEPTH),
     bikiniBottom: lathe([[0.0, -0.08], [0.171, -0.08], [0.18, -0.03], [0.181, 0.0], [0.176, 0.008]], TORSO_DEPTH),
@@ -447,7 +511,7 @@ export type Gender = "m" | "f";
 export interface Look {
   gender: Gender;
   hair: "short" | "bald" | "long" | "bun" | "pony" | "cap" | "spiky";
-  top: "tee" | "long" | "tank" | "hoodie" | "dress" | "floral" | "jacket" | "crop" | "bikini";
+  top: "tee" | "long" | "tank" | "hoodie" | "dress" | "floral" | "jacket" | "crop" | "bikini" | "shirtless" | "qipao";
   bottom: "pants" | "shorts" | "skirt" | "none" | "bikini";
   glasses: boolean;
   bow: boolean;
@@ -456,6 +520,10 @@ export interface Look {
   chain?: boolean;
   /** Knee-high boots (shins take the shoe colour). */
   boots?: boolean;
+  /** Body shape: "slim" gives a narrower, hourglass waist. */
+  figure?: "regular" | "slim";
+  /** Cut of a bikini bottom: the default band, or a triangle cut. */
+  bikiniCut?: "band" | "tri";
   hat?: "none" | "bucket" | "snapback" | "headband" | "catEars";
   /** Original superhero costumes (not any real franchise's design). */
   costume?: "none" | "cape" | "armor" | "ninja";
@@ -567,7 +635,7 @@ export function createRig(look: Look, opts: { cup?: boolean } = {}): Rig {
   const suit = costume !== "none"; // full bodysuit
   const topKind = suit ? "tee" : look.top;
   const bottomKind = suit ? "pants" : look.bottom;
-  const sleeveless = !suit && (topKind === "tank" || topKind === "dress" || topKind === "crop" || topKind === "bikini");
+  const sleeveless = !suit && (topKind === "tank" || topKind === "dress" || topKind === "crop" || topKind === "bikini" || topKind === "shirtless");
   const sleeveUpper: Slot = sleeveless ? "skin" : "outfit";
   const sleeveLower: Slot = suit || topKind === "long" || topKind === "hoodie" || topKind === "jacket" ? "outfit" : "skin";
   const legUpper: Slot = suit ? "outfit" : bottomKind === "pants" || bottomKind === "shorts" ? "pants" : "skin";
@@ -578,13 +646,22 @@ export function createRig(look: Look, opts: { cup?: boolean } = {}): Rig {
   const root = new THREE.Object3D();
   const hips = node(root, 0, HIP_HEIGHT);
   part(hips, "pelvis", suit ? "outfit" : bottomKind === "pants" || bottomKind === "shorts" ? "pants" : bottomKind === "bikini" ? "skin" : "outfit");
-  if (bottomKind === "bikini") part(hips, "bikiniBottom", "outfit");
+  if (bottomKind === "bikini") part(hips, look.bikiniCut === "tri" ? "bikiniTri" : "bikiniBottom", "outfit");
   if (bottomKind === "skirt") part(hips, "skirt", "accent");
   if (costume === "ninja") part(hips, "sash", "accent");
   const spine = node(hips, 0, 0.03);
   spine.rotation.order = "YXZ";
-  part(spine, topKind === "dress" ? "dress" : "torso", topKind === "crop" || topKind === "bikini" ? "skin" : "outfit");
-  if (topKind === "bikini") part(spine, "bikiniTop", "outfit");
+  const slim = look.figure === "slim" && topKind !== "dress";
+  if (topKind === "qipao") {
+    part(spine, "qipao", "outfit");
+    part(spine, "mandarin", "accent");
+    part(spine, "placket", "accent");
+    // gold brocade flowers over the silk: [angle around the body, height, radius]
+    for (const [a, y, rad] of [[0.5, 0.26, 0.168], [-0.9, 0.22, 0.167], [2.4, 0.25, 0.168], [-2.6, 0.2, 0.167], [0.2, -0.08, 0.19], [-1.3, -0.15, 0.192], [1.4, -0.22, 0.196], [-0.4, -0.3, 0.2], [2.9, -0.12, 0.19], [-2.2, -0.27, 0.2]]) {
+      part(spine, "flower", "accent", Math.sin(a) * rad, y, Math.cos(a) * rad * TORSO_DEPTH, a);
+    }
+  } else part(spine, topKind === "dress" ? "dress" : slim ? "torsoSlim" : "torso", topKind === "crop" || topKind === "bikini" || topKind === "shirtless" ? "skin" : "outfit");
+  if (topKind === "bikini") part(spine, slim ? "bikiniTopSlim" : "bikiniTop", "outfit");
   if (topKind === "crop") part(spine, "cropTop", "outfit");
   if (topKind === "hoodie") part(spine, "hood", "outfit");
   if (topKind === "jacket") {
@@ -716,23 +793,47 @@ export const DANCES = [
   { emoji: "🐎", name: "Cưỡi ngựa" },
   { emoji: "🐔", name: "Con gà" },
   { emoji: "🌪️", name: "Xoay vòng" },
-  { emoji: "🤖", name: "Robot" },
+  { emoji: "👏", name: "Vỗ tay" },
   { emoji: "🦘", name: "Bật nhảy" },
   { emoji: "🎸", name: "Headbang guitar" },
   { emoji: "🐍", name: "Sóng tay" },
   { emoji: "🦵", name: "Ngồi đá chân" },
   { emoji: "💃", name: "Lắc hông" },
   { emoji: "💁", name: "Vẩy tóc" },
+  // --- Gen Z / TikTok-era moves ---
+  { emoji: "🦶", name: "Griddy" },
+  { emoji: "😮", name: "Hit the Woah" },
+  { emoji: "⚽", name: "Shoot" },
+  { emoji: "🌊", name: "Whip Nae Nae" },
+  { emoji: "🍄", name: "Smurf" },
+  { emoji: "💫", name: "Gwara Gwara" },
+  { emoji: "🌊", name: "Lướt sóng" },
+  { emoji: "🍜", name: "Tay mì" },
+  { emoji: "🌙", name: "Moonwalk" },
+  { emoji: "🫰", name: "Bắn tim" },
+  { emoji: "🪩", name: "Disco chỉ trời" },
+  { emoji: "👣", name: "Two-step" },
+  { emoji: "🌀", name: "Cuộn tay" },
+  // --- hip hop ---
+  { emoji: "🧢", name: "Toprock" },
+  { emoji: "🎧", name: "Bounce" },
+  { emoji: "😤", name: "Krump" },
+  { emoji: "⚡", name: "Popping" },
+  { emoji: "🧊", name: "Freeze" },
+  { emoji: "🥬", name: "Cabbage Patch" },
 ] as const;
 
 export type DanceStyle = number;
 /** Dances that suit a slow lofi groove. */
-export const CHILL_DANCES: DanceStyle[] = [1, 3, 5, 14];
+export const CHILL_DANCES: DanceStyle[] = [1, 3, 5, 14, 26, 29, 30];
 /** High-energy dances the whole crowd does together on a DROP. */
-export const FLASHMOB_DANCES: DanceStyle[] = [12, 7, 4, 5, 15, 10, 8, 2];
-export const PARTY_DANCES: DanceStyle[] = [0, 1, 2, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17];
+export const FLASHMOB_DANCES: DanceStyle[] = [12, 7, 4, 5, 15, 10, 8, 2, 18, 20, 23, 21];
+export const PARTY_DANCES: DanceStyle[] = [0, 1, 2, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 36];
+/** Hip hop moves: the cypher crew's grooves and the soloist's set. */
+export const HIPHOP_GROOVES: DanceStyle[] = [32, 32, 11, 36];
+export const HIPHOP_SOLOS: DanceStyle[] = [31, 33, 34, 35, 4, 18];
 /** What the go-go dancers on the podiums cycle through. */
-export const GOGO_DANCES: DanceStyle[] = [16, 7, 17, 14, 5, 2, 16, 4];
+export const GOGO_DANCES: DanceStyle[] = [16, 27, 7, 24, 17, 28, 14, 30, 5, 25, 2, 18, 4, 22];
 
 export interface PoseInput {
   time: number;
@@ -744,30 +845,75 @@ export interface PoseInput {
   cheer?: number; // 0..1 raise-a-hand overlay
   /** Seat height when style === SIT. */
   seat?: number;
+  /** Walk-cycle position 0..1 when style === WALK (driven by distance travelled). */
+  stride?: number;
 }
 
 /** Internal style for guests sitting at tables and lounges (not in the dance picker). */
 export const SIT = 99;
+/** Internal styles for waiters: walking with a tray held up, and leaning in to serve. */
+export const WALK = 98;
+export const SERVE = 97;
 
 const S = Math.sin;
 const PI = Math.PI;
 
-// Robot keyframes: [shLx, shLz, elLx, shRx, shRz, elRx, headY, spineY], snapped every half beat.
-const ROBOT = [
-  [-1.57, 0.1, 0, 0, -0.1, -1.57, 0.6, 0.3],
-  [0, 1.57, -1.57, 0, -1.57, -1.57, 0, 0],
-  [0, 0.1, -1.57, -1.57, -0.1, 0, -0.6, -0.3],
-  [-1.57, 0.1, -1.57, -1.57, -0.1, -1.57, 0, 0],
-];
-
 /** Procedural dance, all angles in radians. Figure faces +z; index 0 = left (+x) side. */
+// ---------------------------------------------------------------------------
+// Joint smoothing: every joint eases toward its new pose instead of jumping there, so pose
+// changes, dance switches and fast wiggles come out fluid (time constant ≈ 45 ms, short enough
+// to keep the hits on the beat).
+// ---------------------------------------------------------------------------
+const SMOOTH_RATE = 22;
+const smoothState = new WeakMap<Rig, { t: number; prev: Float32Array }>();
+const jointsOf = (r: Rig) => [r.hips, r.spine, r.head, ...r.shoulder, ...r.elbow, ...r.wrist, ...r.hip, ...r.knee, ...r.ankle, ...(r.cape ? [r.cape] : [])];
+const wrap = (a: number) => Math.atan2(Math.sin(a), Math.cos(a));
+
 export function poseRig(r: Rig, p: PoseInput) {
+  const joints = jointsOf(r);
+  let st = smoothState.get(r);
+  if (!st) {
+    st = { t: -1, prev: new Float32Array(joints.length * 3 + 3) };
+    smoothState.set(r, st);
+  }
+  // remember last frame's pose before computing the new one
+  joints.forEach((j, i) => {
+    st.prev[i * 3] = j.rotation.x;
+    st.prev[i * 3 + 1] = j.rotation.y;
+    st.prev[i * 3 + 2] = j.rotation.z;
+  });
+  const n = joints.length * 3;
+  st.prev[n] = r.hips.position.x;
+  st.prev[n + 1] = r.hips.position.y;
+  st.prev[n + 2] = r.hips.position.z;
+  const dt = st.t < 0 ? -1 : p.time - st.t;
+  st.t = p.time;
+  computePose(r, p);
+  // ease from the previous pose toward the target (skip on the first frame or after a long pause)
+  if (dt > 0 && dt < 0.5) {
+    const k = 1 - Math.exp(-dt * SMOOTH_RATE);
+    joints.forEach((j, i) => {
+      const px = st.prev[i * 3];
+      const py = st.prev[i * 3 + 1];
+      const pz = st.prev[i * 3 + 2];
+      j.rotation.set(px + wrap(j.rotation.x - px) * k, py + wrap(j.rotation.y - py) * k, pz + wrap(j.rotation.z - pz) * k);
+    });
+    const hp = r.hips.position;
+    hp.set(st.prev[n] + (hp.x - st.prev[n]) * k, st.prev[n + 1] + (hp.y - st.prev[n + 1]) * k, st.prev[n + 2] + (hp.z - st.prev[n + 2]) * k);
+  }
+}
+
+function computePose(r: Rig, p: PoseInput) {
   const { time: t, energy: e, seed } = p;
   const shifted = p.phase + seed * 0.13;
   const ph = shifted % 1;
   const B = p.beat + Math.floor(shifted);
+  /** Continuous beat count. Rhythmic motions use it so they land on the music, not on wall-clock time. */
+  const bt = B + ph;
+  /** One full cycle per `beats` beats. */
+  const cyc = (beats: number, offset = 0) => S((bt / beats) * PI * 2 + offset);
   const bounce = Math.abs(S(ph * PI)); // 0..1 down-up each beat
-  const sway = S((t + seed * 7) * 2.1);
+  const sway = cyc(2, seed * 2); // side to side across two beats
   const up = Math.max(0, S(ph * PI * 2));
   const [shL, shR] = r.shoulder;
   const [elL, elR] = r.elbow;
@@ -819,7 +965,7 @@ export function poseRig(r: Rig, p: PoseInput) {
       break;
     case 2: {
       // hands in the air
-      const w = S((t + seed) * 4) * 0.3;
+      const w = cyc(2) * 0.3;
       shL.rotation.set(-0.15, 0, 2.7 + w * (0.5 + e));
       shR.rotation.set(-0.15, 0, -2.7 + w * (0.5 + e));
       elL.rotation.set(-0.2 - up * 0.3, 0, 0);
@@ -874,14 +1020,15 @@ export function poseRig(r: Rig, p: PoseInput) {
       break;
     }
     case 7: // "bay lắc": hands up, wrists twisting, head shaking like crazy
-      shL.rotation.set(-0.4, 0, 2.3 + 0.15 * S(t * 8));
-      shR.rotation.set(-0.4, 0, -2.3 - 0.15 * S(t * 8 + 1));
-      elL.rotation.set(-1.3, S(t * 14) * 0.7, 0);
-      elR.rotation.set(-1.3, -S(t * 14) * 0.7, 0);
-      r.wrist[0].rotation.y = S(t * 16) * 0.9;
-      r.wrist[1].rotation.y = -S(t * 16) * 0.9;
-      r.head.rotation.set(-0.15, S(t * 13) * 0.6 * (0.5 + e), S(t * 6.5) * 0.15);
-      r.spine.rotation.z = S(t * 6) * 0.08;
+      // arms pump with the beat, wrists twist and the head sways once per beat
+      shL.rotation.set(-0.4, 0, 2.3 + 0.15 * cyc(2));
+      shR.rotation.set(-0.4, 0, -2.3 - 0.15 * cyc(2, 1));
+      elL.rotation.set(-1.3, cyc(1) * 0.6, 0);
+      elR.rotation.set(-1.3, -cyc(1) * 0.6, 0);
+      r.wrist[0].rotation.y = cyc(1) * 0.7;
+      r.wrist[1].rotation.y = -cyc(1) * 0.7;
+      r.head.rotation.set(-0.15, cyc(1) * 0.45 * (0.5 + e), cyc(2) * 0.15);
+      r.spine.rotation.z = cyc(1) * 0.08;
       squat(0.12 + bounce * 0.45);
       break;
     case 8: {
@@ -895,7 +1042,7 @@ export function poseRig(r: Rig, p: PoseInput) {
       elL.rotation.set(-0.4, 0, 0);
       if (B % 8 >= 4) {
         shR.rotation.set(-0.3, 0, -2.8);
-        elR.rotation.set(-0.6, t * 10, 0);
+        elR.rotation.set(-0.6, bt * PI * 2, 0); // lasso: one swing per beat
       } else {
         shR.rotation.set(-1.25, 0, 0.35);
         elR.rotation.set(-0.4, 0, 0);
@@ -904,17 +1051,17 @@ export function poseRig(r: Rig, p: PoseInput) {
     }
     case 9: {
       // chicken: flap the elbows, peck with the head
-      const flap = Math.abs(S(ph * PI * 2));
+      const flap = Math.abs(S(ph * PI)); // one flap per beat
       shL.rotation.set(0.2, 0, 0.35 + 0.8 * flap);
       shR.rotation.set(0.2, 0, -0.35 - 0.8 * flap);
       elL.rotation.set(-2.5, 0, 0);
       elR.rotation.set(-2.5, 0, 0);
       r.spine.rotation.x = 0.25;
-      r.head.rotation.set(0.4 * S(ph * PI * 4), 0, 0);
+      r.head.rotation.set(0.35 * S(ph * PI * 2), 0, 0);
       break;
     }
     case 10: // spin like a top
-      r.hips.rotation.y = t * (5 + 3 * e) + seed * 10;
+      r.hips.rotation.y = bt * PI + seed * 10; // a full turn every two beats
       shL.rotation.set(-0.2, 0, 1.5);
       shR.rotation.set(-0.2, 0, -1.5);
       elL.rotation.set(-0.2, 0, 0);
@@ -922,15 +1069,14 @@ export function poseRig(r: Rig, p: PoseInput) {
       r.head.rotation.set(-0.3, 0, 0.2);
       break;
     case 11: {
-      // robot: snap between keyframes on every half beat
-      const k = ROBOT[(B * 2 + (ph >= 0.5 ? 1 : 0)) % 4];
-      shL.rotation.set(k[0], 0, k[1]);
-      elL.rotation.set(k[2], 0, 0);
-      shR.rotation.set(k[3], 0, k[4]);
-      elR.rotation.set(k[5], 0, 0);
-      r.head.rotation.set(0, k[6], 0);
-      r.spine.rotation.set(0, k[7], 0);
-      squat(ph < 0.5 ? 0.05 : 0.18);
+      // Clap: hands meet in front of the chest on every beat, with a relaxed bounce
+      const open = 1 - Math.pow(S(ph * PI), 0.6); // 0 = hands together, right on the beat
+      shL.rotation.set(-1.1, 0, -0.05 + 0.45 * open);
+      shR.rotation.set(-1.1, 0, 0.05 - 0.45 * open);
+      elL.rotation.set(-0.9, -0.5 + 0.35 * open, 0);
+      elR.rotation.set(-0.9, 0.5 - 0.35 * open, 0);
+      r.head.rotation.z = 0.12 * cyc(2);
+      squat(0.12 + bounce * 0.2);
       break;
     }
     case 12: {
@@ -956,13 +1102,13 @@ export function poseRig(r: Rig, p: PoseInput) {
       r.head.rotation.set(-0.2 + 0.6 * bounce, 0, 0);
       shL.rotation.set(-1.0, 0, -0.6);
       elL.rotation.set(-0.8, 0.6, 0);
-      shR.rotation.set(-0.5 + 0.25 * S(t * 22), 0, 0.2);
+      shR.rotation.set(-0.5 + 0.25 * cyc(1), 0, 0.2); // strumming on the beat
       elR.rotation.set(-1.4, 0, 0);
       squat(0.2 + bounce * 0.15, 0.22);
       break;
     case 14: {
       // arm wave rippling from one hand to the other
-      const w = (o: number) => S(t * 5 - o);
+      const w = (o: number) => cyc(2, -o);
       shL.rotation.set(-0.1, 0, 1.5 + 0.35 * w(0));
       elL.rotation.set(0, 0, 0.7 * w(0.8));
       r.wrist[0].rotation.z = 0.6 * w(1.2);
@@ -988,7 +1134,23 @@ export function poseRig(r: Rig, p: PoseInput) {
       break;
     }
   }
-  if (p.style === SIT) {
+  if (p.style === WALK || p.style === SERVE) {
+    const c = (p.stride ?? 0) * PI * 2;
+    const walking = p.style === WALK;
+    const swing = walking ? S(c) : 0;
+    r.hips.rotation.set(0, swing * 0.1, 0);
+    r.hips.position.set(0, HIP_HEIGHT - (walking ? 0.015 + Math.abs(S(c)) * -0.02 : 0.02), 0);
+    leg(0, -0.5 * swing - 0.05, walking ? 0.5 * Math.max(0, -S(c)) + 0.1 : 0.15);
+    leg(1, 0.5 * swing - 0.05, walking ? 0.5 * Math.max(0, S(c)) + 0.1 : 0.15);
+    r.spine.rotation.set(walking ? 0.05 : 0.32, -swing * 0.08, 0);
+    r.head.rotation.set(walking ? -0.05 : -0.2, 0, 0);
+    // left arm swings while walking, rests forward while serving
+    shL.rotation.set(walking ? 0.45 * swing : -0.6, 0, 0.15);
+    elL.rotation.set(walking ? -0.35 : -0.9, 0, 0);
+    // right arm keeps the tray up beside the head; lowers it to serve
+    shR.rotation.set(walking ? -0.25 : -1.1, 0, walking ? -2.35 : -0.5);
+    elR.rotation.set(walking ? -1.45 : -0.6, 0, 0);
+  } else if (p.style === SIT) {
     // sitting: thighs forward, shins down, bobbing to the beat; every few seconds a sip from the cup
     const sip = Math.pow(Math.max(0, S(t * 0.7 + seed * 23)), 10);
     const chat = S(t * 1.3 + seed * 9);
@@ -1015,19 +1177,284 @@ export function poseRig(r: Rig, p: PoseInput) {
     r.hips.position.x = 0.05 * w;
     r.spine.rotation.set(0.02, -0.1 * w, -0.18 * w);
     r.head.rotation.set(-0.05, 0.2 * w, 0.15 * w);
-    arm(0, -0.25, 2.55 + 0.15 * S(t * 4), -0.7, 0, flip);
+    arm(0, -0.25, 2.55 + 0.15 * cyc(1), -0.7, 0, flip);
     arm(1, 0.25, -0.55, -1.7, 0.6, flip);
     leg(0, -0.15 - 0.15 * Math.max(0, w), 0.3 + 0.3 * Math.max(0, w));
     leg(1, -0.15 - 0.15 * Math.max(0, -w), 0.3 + 0.3 * Math.max(0, -w));
   } else if (p.style === 17) {
     // hair whip: the head rolls in circles, arms flung wide
-    r.head.rotation.set(0.35 * S(t * 6), 0, 0.35 * Math.cos(t * 6));
-    r.spine.rotation.set(0.2 + 0.1 * S(t * 6), 0, 0.12 * Math.cos(t * 6));
-    shL.rotation.set(-0.4, 0, 1.4 + 0.4 * S(t * 3));
-    shR.rotation.set(-0.4, 0, -1.4 - 0.4 * S(t * 3 + 1));
+    // one head roll per beat
+    r.head.rotation.set(0.35 * cyc(1), 0, 0.35 * cyc(1, PI / 2));
+    r.spine.rotation.set(0.2 + 0.1 * cyc(1), 0, 0.12 * cyc(1, PI / 2));
+    shL.rotation.set(-0.4, 0, 1.4 + 0.4 * cyc(2));
+    shR.rotation.set(-0.4, 0, -1.4 - 0.4 * cyc(2, 1));
     elL.rotation.set(-0.5, 0, 0);
     elR.rotation.set(-0.5, 0, 0);
     squat(0.18 + bounce * 0.25, 0.14);
+  }
+  if (p.style >= 31 && p.style <= 36) {
+    const side = (B % 2) as 0 | 1;
+    const l = S(ph * PI);
+    switch (p.style) {
+      case 31: {
+        // Toprock: step across in front on each beat, arms open wide then crossing, chest leading
+        leg(side, -0.45 * l, 0.5 * l, -0.12 * l);
+        leg((1 - side) as 0 | 1, -0.15, 0.3);
+        r.hips.rotation.y = (side ? 1 : -1) * 0.35 * l;
+        r.spine.rotation.set(0.12, (side ? -1 : 1) * 0.2 * l, 0);
+        const open = 0.5 + 0.5 * cyc(2);
+        arm(0, -0.6, 0.3 + 0.9 * open, -1.0 + 0.4 * open);
+        arm(1, -0.6, -0.3 - 0.9 * open, -1.0 + 0.4 * open);
+        r.head.rotation.set(0.1 + 0.1 * bounce, (side ? -1 : 1) * 0.15, 0);
+        break;
+      }
+      case 32: {
+        // Bounce: knees drop on the beat, shoulders roll, loose arms and a deep head nod
+        squat(0.2 + bounce * 0.45);
+        r.spine.rotation.set(0.15 + 0.12 * bounce, 0.12 * cyc(2), 0);
+        r.head.rotation.set(0.1 + 0.3 * bounce, 0.1 * cyc(2), 0);
+        shL.rotation.set(-0.35 + 0.2 * cyc(1), 0, 0.3);
+        shR.rotation.set(-0.35 + 0.2 * cyc(1, PI), 0, -0.3);
+        elL.rotation.set(-1.2, 0, 0);
+        elR.rotation.set(-1.2, 0, 0);
+        break;
+      }
+      case 33: {
+        // Krump: a chest pop on every beat, arms swinging hard, wide low stance with a stomp
+        const pop = Math.pow(Math.max(0, S(ph * PI)), 2);
+        squat(0.3, 0.2);
+        leg(side, -0.3 - 0.25 * pop, 0.6 + 0.3 * pop, 0.2);
+        r.spine.rotation.set(-0.2 * pop + 0.15, (side ? 1 : -1) * 0.25, 0);
+        r.head.rotation.set(0.25 - 0.3 * pop, 0, 0);
+        arm(0, -0.9 - 0.8 * pop, 0.6 + 0.6 * pop, -1.3 + 0.8 * pop, 0, side === 1);
+        arm(1, -0.4, -0.4, -1.6, 0, side === 1);
+        break;
+      }
+      case 34: {
+        // Popping: muscles "hit" on every beat (a quick contraction), then relax into the wave
+        const hit = Math.pow(1 - ph, 6); // sharp at the beat, gone by mid-beat
+        const w = cyc(2);
+        shL.rotation.set(-0.2, 0, 1.4 + 0.3 * w - 0.25 * hit);
+        shR.rotation.set(-0.2, 0, -1.4 + 0.3 * w + 0.25 * hit);
+        elL.rotation.set(-0.4 - 0.9 * hit, 0, 0.5 * cyc(2, -0.8));
+        elR.rotation.set(-0.4 - 0.9 * hit, 0, 0.5 * cyc(2, -2.4));
+        r.spine.rotation.set(-0.1 * hit, 0, 0.1 * w);
+        r.head.rotation.set(-0.15 * hit, 0.3 * w, 0);
+        squat(0.12 + 0.15 * hit);
+        break;
+      }
+      case 35: {
+        // Freeze: toprock for three beats, then drop into a low one-hand freeze on the fourth
+        if (B % 4 === 3) {
+          const k = Math.min(1, ph * 4);
+          leg(0, -1.2 * k, 2.0 * k, 0.15);
+          leg(1, -0.5 * k, 0.6 * k, 0.7 * k);
+          r.hips.position.y = HIP_HEIGHT - 0.2 * k;
+          r.hips.rotation.set(0, 0.4 * k, 0.45 * k);
+          r.spine.rotation.set(0.35 * k, 0, 0.3 * k);
+          arm(0, -0.2, 0.25, -0.2); // planted hand
+          arm(1, -0.6 * k, -2.4 * k, -0.3); // other arm up
+          r.head.rotation.set(-0.2 * k, 0.4 * k, 0);
+        } else {
+          leg(side, -0.45 * l, 0.5 * l, -0.12 * l);
+          leg((1 - side) as 0 | 1, -0.15, 0.3);
+          r.hips.rotation.y = (side ? 1 : -1) * 0.35 * l;
+          arm(0, -0.6, 0.6 + 0.5 * cyc(2), -0.8);
+          arm(1, -0.6, -0.6 - 0.5 * cyc(2), -0.8);
+        }
+        break;
+      }
+      case 36: {
+        // Cabbage patch: fists circle in front of the chest, hips sway against them
+        const a = bt * PI;
+        shL.rotation.set(-1.0 + 0.3 * Math.sin(a), 0, 0.1 + 0.25 * Math.cos(a));
+        shR.rotation.set(-1.0 + 0.3 * Math.sin(a), 0, -0.1 + 0.25 * Math.cos(a));
+        elL.rotation.set(-1.6, -0.4, 0);
+        elR.rotation.set(-1.6, 0.4, 0);
+        r.hips.rotation.z = -0.15 * Math.cos(a);
+        r.hips.position.x = -0.04 * Math.cos(a);
+        r.spine.rotation.z = 0.1 * Math.cos(a);
+        squat(0.18 + bounce * 0.2);
+        break;
+      }
+    }
+  }
+  if (p.style >= 18 && p.style <= 30) {
+    const side = (B % 2) as 0 | 1;
+    const l = S(ph * PI); // 0→1→0 within each beat
+    switch (p.style) {
+      case 18: {
+        // Griddy: knee up and heel tap on each beat, arms swinging; every 4th beat, hands to the eyes like goggles
+        leg(side, -0.75 * l, 1.25 * l);
+        leg((1 - side) as 0 | 1, -0.12, 0.28);
+        r.hips.position.y = HIP_HEIGHT - 0.03 + 0.03 * l;
+        if (B % 4 === 3) {
+          arm(0, -1.25, -0.15, -2.3);
+          arm(1, -1.25, 0.15, -2.3);
+          r.head.rotation.x = -0.1;
+        } else {
+          arm(0, side ? 0.7 * l : -0.9 * l, 0.25, -1.4);
+          arm(1, side ? -0.9 * l : 0.7 * l, -0.25, -1.4);
+        }
+        break;
+      }
+      case 19: {
+        // Hit the Woah: a fist swings down across the body on the beat while leaning back; switch sides every 2 beats
+        const mirror = Math.floor(B / 2) % 2 === 1;
+        arm(1, -1.45 + bounce * 0.5, -0.7 + 1.1 * bounce, -0.5, 0, mirror);
+        arm(0, -0.35, 0.35, -1.7, 0, mirror);
+        r.spine.rotation.x = -0.12 - 0.1 * bounce;
+        r.spine.rotation.y = (mirror ? -1 : 1) * 0.25 * bounce;
+        squat(0.25 + 0.15 * bounce);
+        break;
+      }
+      case 20: {
+        // Shoot: kick one leg out, thrust the opposite arm forward and down, alternating every beat
+        leg(side, -0.95 * l - 0.1, 0.15);
+        leg((1 - side) as 0 | 1, -0.25, 0.5);
+        r.hips.position.y = HIP_HEIGHT - 2 * LIMB.thigh * (1 - Math.cos(0.25));
+        r.hips.rotation.y = (side ? 1 : -1) * 0.3 * l;
+        arm(0, side ? -1.15 * l - 0.2 : 0.4, side ? -0.25 : 0.2, side ? -0.15 : -1.2);
+        arm(1, side ? 0.4 : -1.15 * l - 0.2, side ? -0.2 : 0.25, side ? -1.2 : -0.15);
+        break;
+      }
+      case 21: {
+        // Whip / Nae Nae: two beats cracking the whip in a squat, two beats waving one hand up high
+        if (B % 4 < 2) {
+          squat(0.38);
+          r.spine.rotation.x = 0.15;
+          shR.rotation.set(-1.3, 0, -0.2);
+          elR.rotation.set(-1.5 + 0.7 * bounce, 0, 0);
+          shL.rotation.set(-0.6, 0, 0.2);
+          elL.rotation.set(-0.4, 0, 0);
+        } else {
+          shR.rotation.set(-0.2, 0, -2.5 + 0.25 * cyc(1));
+          elR.rotation.set(-0.3, 0, 0);
+          shL.rotation.set(-0.3, 0, 0.35);
+          elL.rotation.set(-1.2, 0, 0);
+          r.hips.rotation.z = 0.18 * cyc(1);
+          r.spine.rotation.z = -0.12 * cyc(1);
+        }
+        break;
+      }
+      case 22: {
+        // Smurf: arms swing out in front, alternating, with a bouncy side step
+        const a = Math.max(0, cyc(2));
+        const b = Math.max(0, -cyc(2));
+        shL.rotation.set(-1.0 * a - 0.1, 0, 0.3 + 0.7 * a);
+        shR.rotation.set(-1.0 * b - 0.1, 0, -0.3 - 0.7 * b);
+        elL.rotation.set(-0.6, 0, 0);
+        elR.rotation.set(-0.6, 0, 0);
+        r.hips.position.x = 0.07 * cyc(2);
+        squat(0.15 + bounce * 0.3);
+        break;
+      }
+      case 23: {
+        // Gwara Gwara: one arm loops over the head while the same-side leg swings out, sides swap every 2 beats
+        const k = (bt % 2) / 2;
+        const sweep = S(k * PI);
+        const mirror = Math.floor(B / 2) % 2 === 1;
+        arm(0, -0.4 * sweep, 0.3 + 2.7 * sweep, -0.4, 0, mirror);
+        arm(1, -0.3, -0.35, -1.2, 0, mirror);
+        leg(mirror ? 1 : 0, -0.1, 0.1, 0.6 * sweep);
+        r.spine.rotation.z = (mirror ? 1 : -1) * 0.15 * sweep;
+        r.head.rotation.z = (mirror ? 1 : -1) * 0.2 * sweep;
+        break;
+      }
+      case 24: {
+        // Lướt sóng: a slow body roll from chest to hips over two beats, arms flowing with it
+        const w = cyc(2);
+        const w2 = cyc(2, -1.2);
+        r.spine.rotation.set(0.18 * w, 0, 0);
+        r.hips.rotation.set(-0.12 * w2, 0, 0);
+        r.hips.position.z = 0.05 * w2;
+        r.head.rotation.set(-0.15 * w, 0, 0);
+        shL.rotation.set(-0.5 - 0.3 * w, 0, 0.6 + 0.2 * w2);
+        shR.rotation.set(-0.5 - 0.3 * w, 0, -0.6 - 0.2 * w2);
+        elL.rotation.set(-0.9 + 0.3 * w2, 0, 0);
+        elR.rotation.set(-0.9 + 0.3 * w2, 0, 0);
+        squat(0.2 + 0.1 * w2);
+        break;
+      }
+      case 25: {
+        // Tay mì: loose, wobbly noodle arms and a jiggly body
+        shL.rotation.set(0.3 * cyc(1, 1), 0, 1.2 + 0.6 * cyc(1));
+        elL.rotation.set(-0.8 - 0.6 * cyc(1, 2), 0.6 * cyc(1, 3), 0);
+        shR.rotation.set(0.3 * cyc(1, 2), 0, -1.2 - 0.6 * cyc(1, 1));
+        elR.rotation.set(-0.8 - 0.6 * cyc(1, 3), -0.6 * cyc(1, 1), 0);
+        r.wrist[0].rotation.z = 0.6 * cyc(1);
+        r.wrist[1].rotation.z = -0.6 * cyc(1, 1);
+        r.spine.rotation.z = 0.12 * cyc(1);
+        r.head.rotation.z = 0.2 * cyc(1, 1);
+        squat(0.12 + bounce * 0.2);
+        break;
+      }
+      case 26: {
+        // Moonwalk: one leg slides back flat while the other bends with the heel up, swapping each half beat
+        const half = (B % 2) as 0 | 1;
+        leg(half, 0.35, 0.05);
+        leg((1 - half) as 0 | 1, -0.15, 0.55);
+        r.ankle[(1 - half) as 0 | 1].rotation.x = 0.35; // heel up
+        r.spine.rotation.x = -0.06;
+        shL.rotation.set(0.25 * cyc(1), 0, 0.25);
+        shR.rotation.set(-0.25 * cyc(1), 0, -0.25);
+        elL.rotation.set(-0.8, 0, 0);
+        elR.rotation.set(-0.8, 0, 0);
+        break;
+      }
+      case 27: {
+        // Bắn tim: a big heart over the head every other beat, a finger heart under the chin in between
+        if (B % 2 === 0) {
+          shL.rotation.set(-0.3, 0, 2.45);
+          shR.rotation.set(-0.3, 0, -2.45);
+          elL.rotation.set(-0.2, 0, 1.25);
+          elR.rotation.set(-0.2, 0, -1.25);
+        } else {
+          shL.rotation.set(-1.2, 0, -0.25);
+          shR.rotation.set(-1.2, 0, 0.25);
+          elL.rotation.set(-2.2, 0, 0);
+          elR.rotation.set(-2.2, 0, 0);
+          r.head.rotation.z = 0.25;
+        }
+        squat(0.1 + bounce * 0.2);
+        break;
+      }
+      case 28: {
+        // Disco: point up across the body, then down to the floor, hand on hip; switch sides every 4 beats
+        const mirror = Math.floor(B / 4) % 2 === 1;
+        const upBeat = B % 2 === 0;
+        arm(1, upBeat ? -0.4 : -0.9, upBeat ? -2.7 : 0.45, 0, 0, mirror);
+        arm(0, 0.2, 0.6, -1.8, 0, mirror);
+        r.hips.rotation.z = (upBeat ? 1 : -1) * (mirror ? -1 : 1) * 0.15;
+        r.head.rotation.set(upBeat ? -0.3 : 0.3, 0, 0);
+        break;
+      }
+      case 29: {
+        // Two-step: step out to one side and back on each beat, arms swinging easily
+        const w = cyc(2);
+        r.hips.position.x = 0.08 * w;
+        r.hips.rotation.z = -0.06 * w;
+        leg(0, -0.1 - 0.25 * Math.max(0, w) * l, 0.25 + 0.4 * Math.max(0, w) * l, 0.06 + 0.12 * Math.max(0, -w));
+        leg(1, -0.1 - 0.25 * Math.max(0, -w) * l, 0.25 + 0.4 * Math.max(0, -w) * l, 0.06 + 0.12 * Math.max(0, w));
+        shL.rotation.set(0.3 * w, 0, 0.25);
+        shR.rotation.set(-0.3 * w, 0, -0.25);
+        elL.rotation.set(-1.1, 0, 0);
+        elR.rotation.set(-1.1, 0, 0);
+        r.head.rotation.z = 0.1 * w;
+        break;
+      }
+      case 30: {
+        // Cuộn tay: forearms rolling around each other in front of the chest, one roll per beat
+        const a = bt * PI * 2;
+        shL.rotation.set(-1.0 + 0.25 * Math.sin(a), 0, -0.1);
+        shR.rotation.set(-1.0 + 0.25 * Math.sin(a + PI), 0, 0.1);
+        elL.rotation.set(-1.5 + 0.3 * Math.cos(a), -0.5, 0);
+        elR.rotation.set(-1.5 + 0.3 * Math.cos(a + PI), 0.5, 0);
+        r.spine.rotation.y = 0.12 * cyc(2);
+        squat(0.14 + bounce * 0.2);
+        break;
+      }
+    }
   }
   if (r.cape) {
     // the cape flutters with the groove and flies out on jumps and spins

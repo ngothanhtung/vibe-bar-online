@@ -15,9 +15,9 @@ import { createRig, FLASHMOB_DANCES, GOGO_DANCES, poseRig, type Look } from "./c
 import { useClub } from "@/lib/store";
 import { useStageTag } from "./labels";
 
-const TRUSS_X = 3.7;
+const TRUSS_X = 8.2;
 const TRUSS_Z = 1.0;
-const TRUSS_TOP = 5.0;
+const TRUSS_TOP = 6.4;
 
 // ---------------------------------------------------------------------------
 // Truss
@@ -65,7 +65,7 @@ function Truss() {
   const geo = useMemo(() => {
     const tower = trussGeometry(TRUSS_TOP);
     const top = trussGeometry(TRUSS_X * 2);
-    const side = trussGeometry(2.6);
+    const side = trussGeometry(3.4);
     return { tower, top, side };
   }, []);
   return (
@@ -90,8 +90,8 @@ function Truss() {
 // ---------------------------------------------------------------------------
 // Moving-head spots hanging from the front beam
 // ---------------------------------------------------------------------------
-const HEAD_XS = [-3.0, -1.8, -0.6, 0.6, 1.8, 3.0];
-const BEAM_LEN = 9;
+const HEAD_XS = [-6.6, -4.4, -2.2, 0, 2.2, 4.4, 6.6];
+const BEAM_LEN = 11;
 
 function MovingHeads() {
   const heads = useRef<THREE.Group[]>([]);
@@ -117,7 +117,7 @@ function MovingHeads() {
       } else if (mode === 1) {
         h.rotation.set(-0.7, 0, side * (0.3 + Math.sin(t * 1.6) * 0.5));
       } else {
-        h.rotation.set(-(0.85 + Math.sin(t * 3 + i) * 0.12), 0, HEAD_XS[i] * 0.1 + Math.sin(t * 2) * 0.15);
+        h.rotation.set(-(0.85 + Math.sin(t * 3 + i) * 0.12), 0, HEAD_XS[i] * 0.06 + Math.sin(t * 2) * 0.15);
       }
     });
     mats.forEach((m, i) => {
@@ -185,7 +185,7 @@ function StageSkirt() {
   });
   return (
     <mesh position={[0, 0.24, 1.502]}>
-      <planeGeometry args={[6, 0.42]} />
+      <planeGeometry args={[16, 0.42]} />
       <shaderMaterial
         uniforms={uniforms}
         toneMapped={false}
@@ -196,7 +196,7 @@ function StageSkirt() {
   );
 }
 
-const EDGE_N = 28;
+const EDGE_N = 40;
 const tmpO = new THREE.Object3D();
 const tmpC = new THREE.Color();
 
@@ -205,8 +205,8 @@ function EdgeLights() {
   const ref = useRef<THREE.InstancedMesh>(null);
   const spots = useMemo(() => {
     const s: [number, number][] = [];
-    for (let i = 0; i < 16; i++) s.push([-2.9 + (i / 15) * 5.8, 1.42]);
-    for (let i = 0; i < 6; i++) s.push([-2.92, 1.2 - i * 0.5], [2.92, 1.2 - i * 0.5]);
+    for (let i = 0; i < 24; i++) s.push([-7.8 + (i / 23) * 15.6, 1.42]);
+    for (let i = 0; i < 8; i++) s.push([-7.92, 1.1 - i * 0.55], [7.92, 1.1 - i * 0.55]);
     return s.slice(0, EDGE_N);
   }, []);
   useFrame(() => {
@@ -240,19 +240,70 @@ function EdgeLights() {
 // ---------------------------------------------------------------------------
 const DANCER_BASE = { eye: "#16121c", white: "#ffffff", blush: "#ff9db2", dark: "#141418", gold: "#f5c542", visor: "#7df9ff" };
 
-const DANCERS: { x: number; name: string; look: Look; light: string }[] = [
+/** Male dancers on the outer podiums: shirtless, long pants, short spiky hair. */
+function maleDancer(x: number, z: number, name: string, skin: string, hairColor: string, pants: string, shoe: string, light: string, extras: Partial<Look> = {}) {
+  return {
+    x,
+    z,
+    name,
+    light,
+    look: {
+      gender: "m" as const,
+      hair: "spiky" as const,
+      top: "shirtless" as const,
+      bottom: "pants" as const,
+      glasses: false,
+      shades: false,
+      bow: false,
+      blush: false,
+      chain: false,
+      hat: "none" as const,
+      ...extras,
+      palette: { ...DANCER_BASE, skin, hair: hairColor, outfit: pants, accent: "#ffffff", pants, shoe },
+    },
+  };
+}
+
+/** Dancers in a bikini top with long jeans, hair in a bun. */
+function jeansDancer(x: number, z: number, name: string, skin: string, hairColor: string, top: string, denim: string, light: string) {
+  return {
+    x,
+    z,
+    name,
+    light,
+    look: {
+      gender: "f" as const,
+      figure: "slim" as const,
+      hair: "bun" as const,
+      top: "bikini" as const,
+      bottom: "pants" as const,
+      boots: false,
+      glasses: false,
+      shades: false,
+      bow: false,
+      blush: true,
+      chain: false,
+      hat: "none" as const,
+      palette: { ...DANCER_BASE, skin, hair: hairColor, outfit: top, accent: "#c9a46a", pants: denim, shoe: "#f5f5f0" },
+    },
+  };
+}
+
+const DANCERS: { x: number; z?: number; name: string; look: Look; light: string }[] = [
   {
     x: -4.4,
-    name: "NHUNG NHÚN NHẢY",
+    z: 0.8,
+    name: "CHI CHANH CHUA",
     light: "#ff2bd6",
     look: {
       gender: "f",
+      figure: "slim",
       hair: "pony",
       top: "bikini",
       bottom: "bikini",
       boots: true,
       glasses: false,
-      shades: true,
+      shades: false,
       bow: false,
       blush: true,
       chain: true,
@@ -262,10 +313,12 @@ const DANCERS: { x: number; name: string; look: Look; light: string }[] = [
   },
   {
     x: 4.4,
+    z: 0.8,
     name: "LAN LẢ LƯỚT",
     light: "#00e5ff",
     look: {
       gender: "f",
+      figure: "slim",
       hair: "long",
       top: "bikini",
       bottom: "bikini",
@@ -279,11 +332,17 @@ const DANCERS: { x: number; name: string; look: Look; light: string }[] = [
       palette: { ...DANCER_BASE, skin: "#eec09a", hair: "#1d1a1f", outfit: "#00e5ff", accent: "#1c1c20", pants: "#1a1a1f", shoe: "#ff2bd6" },
     },
   },
+  // two more on each side, on podiums further out
+  jeansDancer(-5.8, 0.1, "HƯƠNG HÓNG HỚT", "#fde3cc", "#1d1a1f", "#ff3b5c", "#3d5f94", "#ff3b5c"),
+  maleDancer(-7.2, 0.8, "CƯỜNG CAY CÚ", "#f2c9a5", "#2a211c", "#34507e", "#f5f5f0", "#7cff4f", { chain: true }),
+  jeansDancer(5.8, 0.1, "LINH LÍ LẮC", "#f6d2b4", "#3b2618", "#ffffff", "#25324f", "#00e5ff"),
+  maleDancer(7.2, 0.8, "BÌNH BU BÁM", "#e6b48a", "#eceaf2", "#f0ede6", "#1c1c20", "#a66bff"),
 ];
 
-const PODIUM_H = 1.0;
+const PODIUM_H = 0.6;
+const STAGE_TOP = 0.5;
 
-function GogoPodium({ x, name, look, light, seed }: { x: number; name: string; look: Look; light: string; seed: number }) {
+function GogoPodium({ x, z = 1.4, name, look, light, seed }: { x: number; z?: number; name: string; look: Look; light: string; seed: number }) {
   const rig = useMemo(() => {
     const r = createRig(look);
     return r;
@@ -307,8 +366,13 @@ function GogoPodium({ x, name, look, light, seed }: { x: number; name: string; l
   useFrame(() => {
     const dropping = pulse.drop > 0.2;
     const flashmob = FLASHMOB_DANCES[Math.floor(useClub.getState().dropAt) % FLASHMOB_DANCES.length];
-    const style = dropping ? flashmob : GOGO_DANCES[Math.floor(pulse.beat / 8) % GOGO_DANCES.length];
-    poseRig(rig, { time: pulse.time, phase: pulse.phase, beat: pulse.beat, energy: 0.85, style, seed });
+    // Choreography: the two dancers of a pair (same distance from centre) mirror each other's dance,
+    // each pair dances something different, and everyone switches together every 8 beats.
+    // seed 0 = no phase offset, so every move lands exactly on the beat.
+    const troupe = Math.abs(x) < 5 ? 0 : Math.abs(x) < 6.5 ? 1 : 2;
+    const phrase = Math.floor(pulse.beat / 8);
+    const style = dropping ? flashmob : GOGO_DANCES[(phrase + troupe * 3) % GOGO_DANCES.length];
+    poseRig(rig, { time: pulse.time, phase: pulse.phase, beat: pulse.beat, energy: 0.85, style, seed: 0 });
     const k = 0.45 + pulse.kick * 0.4;
     if (ring.current) ring.current.color.set(light).multiplyScalar(k + 0.3);
     if (band.current) band.current.color.setHSL((pulse.time * 0.15 + seed) % 1, 1, 0.3 + pulse.kick * 0.3);
@@ -316,7 +380,7 @@ function GogoPodium({ x, name, look, light, seed }: { x: number; name: string; l
   }, POSE_PRIORITY);
 
   return (
-    <group position={[x, 0, 1.4]}>
+    <group position={[x, STAGE_TOP, z]}>
       {/* podium */}
       <mesh position={[0, PODIUM_H / 2, 0]}>
         <cylinderGeometry args={[0.55, 0.62, PODIUM_H, 32]} />
@@ -348,7 +412,7 @@ export function StageExtras() {
       <StageSkirt />
       <EdgeLights />
       {DANCERS.map((d, i) => (
-        <GogoPodium key={d.x} x={d.x} name={d.name} look={d.look} light={d.light} seed={i * 0.5} />
+        <GogoPodium key={d.x} x={d.x} z={d.z} name={d.name} look={d.look} light={d.light} seed={i * 0.17} />
       ))}
     </group>
   );

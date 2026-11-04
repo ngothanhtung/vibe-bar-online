@@ -13,7 +13,7 @@ service cloud.firestore {
         && request.resource.data.x is number && request.resource.data.z is number
         && request.resource.data.look is int
         && request.resource.data.gender in ['m', 'f']
-        && request.resource.data.dance is int && request.resource.data.dance >= -1 && request.resource.data.dance < 32
+        && request.resource.data.dance is int && request.resource.data.dance >= -1 && request.resource.data.dance < 64
         && request.resource.data.lastSeen == request.time
         && request.resource.data.keys().hasOnly(['name', 'color', 'look', 'gender', 'dance', 'x', 'z', 'lastSeen']);
       allow delete: if signedIn() && request.auth.uid == uid;

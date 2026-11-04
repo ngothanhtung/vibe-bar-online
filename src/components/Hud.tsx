@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { engine, GENRES, type Genre } from "@/lib/audio";
 import { doAction, rerollLook, sendShout, setDance } from "@/lib/club";
 import { DANCES } from "./scene/chibi";
-import { ACTIONS, DRUNK_LINES, FORTUNES, randomOf, type ActionKind } from "@/lib/content";
+import { ACTIONS, DRUNK_LINES, FORTUNES, randomOf, SHOUT_IDEAS, type ActionKind } from "@/lib/content";
 import { useClub } from "@/lib/store";
 import { ytAudio } from "@/lib/youtube";
 import { NowPlaying, stopYouTube, YouTubeLinkForm } from "./YouTubeDj";
@@ -19,7 +19,7 @@ function TopBar() {
   return (
     <div className="pointer-events-none fixed inset-x-0 top-0 z-20 flex flex-wrap items-start justify-between gap-3 p-3 sm:p-4">
       <div className="pointer-events-auto">
-        <h1 className="neon-title text-2xl sm:text-3xl">QUẨY BAR</h1>
+        <h1 className="neon-title led-blink text-2xl sm:text-3xl">VIBE BAR</h1>
         <div className="mt-1 inline-flex items-center gap-2 rounded-full bg-black/50 px-3 py-1 text-xs backdrop-blur">
           <span className={`h-2 w-2 rounded-full ${online ? "bg-lime-400 animate-pulse" : "bg-amber-400"}`} />
           {online ? `${fmt(count)} dân chơi đang online` : `Chế độ demo · ${count} bot đang quẩy`}
@@ -247,6 +247,19 @@ function ActionBar({ onFortune }: { onFortune: () => void }) {
           placeholder="Hét gì đó lên màn hình LED... 📣"
           className="glass flex-1 px-4 py-2.5 text-sm outline-none placeholder:text-white/40 focus:ring-2 focus:ring-fuchsia-500"
         />
+        <button
+          type="button"
+          className="glass shrink-0 px-3 text-lg hover:border-fuchsia-400"
+          title="Random một câu hét trend"
+          aria-label="Random một câu hét trend"
+          onClick={() => {
+            let next = randomOf(SHOUT_IDEAS);
+            if (next === text) next = randomOf(SHOUT_IDEAS);
+            setText(next);
+          }}
+        >
+          🎲
+        </button>
         <button className="btn-primary px-5" type="submit">
           Hét!
         </button>

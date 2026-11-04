@@ -15,8 +15,8 @@ const display = Bungee({
 });
 
 export const metadata: Metadata = {
-  title: "Quẩy Bar Online",
-  description: "Đi chùa online thì có rồi, giờ tới lượt quẩy bar online: gọi bia, cụng ly, bắn pháo giấy, xin quẻ đêm nay cùng cả nước.",
+  title: "Vibe Bar",
+  description: "Vibe Bar: đi chùa online thì có rồi, giờ tới lượt quẩy bar online: gọi bia, cụng ly, bắn pháo giấy, xin quẻ đêm nay cùng cả nước.",
 };
 
 export const viewport: Viewport = {
