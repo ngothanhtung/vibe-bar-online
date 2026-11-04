@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, useState } from "react";
+import { useState } from "react";
 import { engine } from "@/lib/audio";
 import { useClub } from "@/lib/store";
 import { parseYouTubeId, ytAudio } from "@/lib/youtube";
@@ -68,30 +68,10 @@ export function YouTubeLinkForm({ onDone }: { onDone: () => void }) {
   );
 }
 
-/** Now-playing bar: title, pause, tempo for the light show, and a way back to the DJ. */
+/** Shows the current YouTube track title. */
 export function NowPlaying() {
   const yt = useClub((s) => s.yt);
-  const bpm = useClub((s) => s.bpm);
-  const set = useClub((s) => s.set);
-  const taps = useRef<number[]>([]);
   if (!yt) return null;
-
-  const setBpm = (v: number, align = false) => {
-    const b = Math.round(Math.max(60, Math.min(200, v)));
-    engine.setExternalBpm(b, align);
-    set({ bpm: b });
-  };
-
-  const tap = () => {
-    const now = performance.now();
-    const t = taps.current.filter((x) => now - x < 2500);
-    t.push(now);
-    taps.current = t.slice(-6);
-    if (t.length >= 3) {
-      const gaps = t.slice(1).map((x, i) => x - t[i]);
-      setBpm(60_000 / (gaps.reduce((a, b) => a + b, 0) / gaps.length), true);
-    }
-  };
 
   if (yt.status === "error") {
     return (
@@ -105,33 +85,8 @@ export function NowPlaying() {
   }
 
   return (
-    <div className="glass pointer-events-auto flex max-w-full items-center gap-1.5 overflow-x-auto px-2 py-1.5 text-xs">
-      <span className="text-red-500">▶</span>
-      <span className="max-w-[40vw] truncate font-medium sm:max-w-xs" title={yt.title}>
-        {yt.title}
-      </span>
-      <button
-        className="chip"
-        aria-label={yt.status === "paused" ? "Phát tiếp" : "Tạm dừng"}
-        disabled={yt.status === "loading"}
-        onClick={() => (yt.status === "paused" ? ytAudio.resume() : ytAudio.pause())}
-      >
-        {yt.status === "paused" ? "▶" : "⏸"}
-      </button>
-      <span className="ml-1 opacity-60">BPM</span>
-      <button className="chip" aria-label="Giảm BPM" onClick={() => setBpm(bpm - 2)}>
-        −
-      </button>
-      <span className="w-7 text-center font-display">{bpm}</span>
-      <button className="chip" aria-label="Tăng BPM" onClick={() => setBpm(bpm + 2)}>
-        +
-      </button>
-      <button className="chip" title="Gõ theo nhịp nhạc 4 lần để đèn bắt nhịp" onClick={tap}>
-        👆 Tap nhịp
-      </button>
-      <button className="chip" aria-label="Tắt YouTube, về DJ" onClick={stopYouTube}>
-        ✕
-      </button>
+    <div className="glass pointer-events-auto max-w-full truncate px-3 py-1.5 text-xs font-medium" title={yt.title}>
+      {yt.title}
     </div>
   );
 }
