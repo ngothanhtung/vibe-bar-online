@@ -50,13 +50,14 @@ export type PartKey =
   | "hand"
   | "thigh"
   | "shin"
-  | "foot";
+  | "foot"
+  | "cup";
 export type Slot = "skin" | "hair" | "eye" | "white" | "blush" | "outfit" | "accent" | "pants" | "shoe" | "dark" | "gold" | "visor";
 
 export const PART_KEYS: PartKey[] = [
   "head", "hair", "spikes", "hairBack", "bun", "pony", "capDome", "capBrim", "bow", "eye", "mouth", "blush", "glasses", "shades",
   "bucketHat", "headband", "catEar", "chain", "flower", "shirtFront", "bowtie", "cape", "emblem", "domino", "helmet", "visor", "core",
-  "hoodTop", "hoodLow", "sash", "torso", "cropTop", "bikiniTop", "bikiniBottom", "dress", "skirt", "hood", "pelvis", "upperArm", "forearm", "hand", "thigh", "shin", "foot",
+  "hoodTop", "hoodLow", "sash", "torso", "cropTop", "bikiniTop", "bikiniBottom", "dress", "skirt", "hood", "pelvis", "upperArm", "forearm", "hand", "thigh", "shin", "foot", "cup",
 ];
 
 // Proportions: about three heads tall, the head as wide as the shoulders.
@@ -395,6 +396,12 @@ export function partGeometries() {
     })(),
     thigh: limb(0.066, 0.061, LIMB.thigh),
     shin: limb(0.058, 0.054, LIMB.shin),
+    // party cup held in the hand
+    cup: (() => {
+      const g = new THREE.CylinderGeometry(0.042, 0.032, 0.11, 14);
+      g.translate(0, -0.07, 0.035);
+      return g;
+    })(),
     // chunky block shoes
     foot: (() => {
       const g = new RoundedBoxGeometry(0.12, 0.075, 0.18, 3, 0.03);
@@ -541,7 +548,7 @@ export interface Rig {
 }
 
 /** Builds the joint hierarchy for a look. Figure faces +z and stands on y=0. */
-export function createRig(look: Look): Rig {
+export function createRig(look: Look, opts: { cup?: boolean } = {}): Rig {
   const parts: Rig["parts"] = [];
   let rigCape: THREE.Object3D | undefined;
   const node = (parent: THREE.Object3D, x: number, y: number, z = 0) => {
@@ -652,6 +659,7 @@ export function createRig(look: Look): Rig {
     part(el, "forearm", sleeveLower);
     const wr = node(el, 0, -LIMB.forearm);
     part(wr, "hand", handSlot);
+    if (opts.cup && side === -1) part(wr, "cup", "accent");
     return [sh, el, wr] as const;
   };
   const leg = (side: 1 | -1) => {
@@ -734,7 +742,12 @@ export interface PoseInput {
   style: DanceStyle;
   seed: number;
   cheer?: number; // 0..1 raise-a-hand overlay
+  /** Seat height when style === SIT. */
+  seat?: number;
 }
+
+/** Internal style for guests sitting at tables and lounges (not in the dance picker). */
+export const SIT = 99;
 
 const S = Math.sin;
 const PI = Math.PI;
@@ -975,7 +988,26 @@ export function poseRig(r: Rig, p: PoseInput) {
       break;
     }
   }
-  if (p.style === 16) {
+  if (p.style === SIT) {
+    // sitting: thighs forward, shins down, bobbing to the beat; every few seconds a sip from the cup
+    const sip = Math.pow(Math.max(0, S(t * 0.7 + seed * 23)), 10);
+    const chat = S(t * 1.3 + seed * 9);
+    r.hips.position.set(0, (p.seat ?? 0.45) + 0.06, 0);
+    r.hips.rotation.set(0, 0, 0);
+    for (const i of [0, 1] as const) {
+      r.hip[i].rotation.set(-1.5, 0, (i === 0 ? 1 : -1) * 0.12);
+      r.knee[i].rotation.set(1.35 + (i === 0 ? 0.15 : 0) * bounce, 0, 0);
+      r.ankle[i].rotation.set(0.1, 0, 0);
+    }
+    r.spine.rotation.set(-0.05 + bounce * 0.05, chat * 0.15, 0);
+    r.head.rotation.set(-0.05 + S(ph * PI * 2) * 0.08 - sip * 0.35, chat * 0.3, 0);
+    // right hand: cup on the table edge, raised to the mouth for a sip
+    shR.rotation.set(-0.7 - sip * 1.25, 0, 0.15);
+    elR.rotation.set(-1.3 - sip * 0.5, 0, 0);
+    // left hand resting on the knee, occasionally gesturing while chatting
+    shL.rotation.set(-0.55 + Math.max(0, chat) * 0.35, 0, 0.1);
+    elL.rotation.set(-0.5 - Math.max(0, chat) * 0.6, 0, 0);
+  } else if (p.style === 16) {
     // hip sway: hips swing side to side, one arm overhead, the other on the hip, swapping every 2 beats
     const w = S(PI * (B + ph));
     const flip = Math.floor(B / 2) % 2 === 0;

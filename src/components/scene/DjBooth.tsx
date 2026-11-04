@@ -6,9 +6,11 @@
 import { useEffect, useMemo, useRef } from "react";
 import { useFrame } from "@react-three/fiber";
 import * as THREE from "three";
+import { mergeGeometries } from "three/examples/jsm/utils/BufferGeometryUtils.js";
 import { pulse } from "./pulse";
+import { POSE_PRIORITY, useFigure } from "./figures";
 import { SPECTRUM_GLSL, spectrumTexture } from "./spectrum";
-import { createRig, dressRig, poseRig, FACE, FLASHMOB_DANCES, HEAD_SIZE, type Look, type Rig } from "./chibi";
+import { createRig, poseRig, FACE, FLASHMOB_DANCES, HEAD_SIZE, type Look, type Rig } from "./chibi";
 import { useClub } from "@/lib/store";
 import { StageExtras } from "./StageExtras";
 import { useStageTag } from "./labels";
@@ -92,10 +94,10 @@ const CREW: CrewMember[] = [
 function Performer({ member }: { member: CrewMember }) {
   const rig = useMemo(() => {
     const r = createRig(member.look);
-    dressRig(r, member.look.palette);
     return r;
   }, [member]);
 
+  useFigure(rig, member.look.palette);
   const group = useRef<THREE.Group>(null);
   useStageTag(group, member.name, member.gear);
 
@@ -126,7 +128,7 @@ function Performer({ member }: { member: CrewMember }) {
         rig.elbow[0].rotation.set(-0.8 + up * 0.6, 0, 0);
       }
     }
-  });
+  }, POSE_PRIORITY);
 
   return (
     <group ref={group} position={[member.x, 0.8, -0.3]}>
@@ -273,10 +275,23 @@ function Mixer({ x }: { x: number }) {
   const faders = useRef<THREE.Mesh[]>([]);
   const xfader = useRef<THREE.Mesh>(null);
   const vu = useRef<THREE.InstancedMesh>(null);
-  const knobs = useMemo(() => {
-    const k: [number, number][] = [];
-    for (let c = 0; c < 4; c++) for (let r = 0; r < 4; r++) k.push([-0.12 + c * 0.08, -0.24 + r * 0.075]);
-    return k;
+  const staticParts = useMemo(() => {
+    const knobs: THREE.BufferGeometry[] = [];
+    for (let c = 0; c < 4; c++)
+      for (let r = 0; r < 4; r++) {
+        const g = new THREE.CylinderGeometry(0.017, 0.017, 0.025, 10);
+        g.translate(-0.12 + c * 0.08, 0.012, -0.24 + r * 0.075);
+        knobs.push(g);
+      }
+    const slots: THREE.BufferGeometry[] = [-0.12, -0.04, 0.04, 0.12].map((fx) => {
+      const g = new THREE.BoxGeometry(0.012, 0.004, 0.14);
+      g.translate(fx, 0.001, 0.13);
+      return g;
+    });
+    const cross = new THREE.BoxGeometry(0.2, 0.004, 0.012);
+    cross.translate(0, 0.001, 0.28);
+    slots.push(cross);
+    return { knobs: mergeGeometries(knobs), slots: mergeGeometries(slots.map((g) => g.toNonIndexed())) };
   }, []);
 
   useEffect(() => {
@@ -316,26 +331,16 @@ function Mixer({ x }: { x: number }) {
         <boxGeometry args={[0.38, 0.09, 0.66]} />
       </mesh>
       <group position={[0, 0.09, 0]}>
-        {knobs.map(([kx, kz], i) => (
-          <mesh key={i} position={[kx, 0.012, kz]} material={knobMat}>
-            <cylinderGeometry args={[0.017, 0.017, 0.025, 10]} />
-          </mesh>
-        ))}
-        {[-0.12, -0.04, 0.04, 0.12].map((fx, i) => (
-          <group key={fx}>
-            <mesh position={[fx, 0.001, 0.13]}>
-              <boxGeometry args={[0.012, 0.004, 0.14]} />
-              <meshBasicMaterial color="#000" />
-            </mesh>
-            <mesh position={[fx, 0.012, 0.13]} ref={(m) => { if (m) faders.current[i] = m; }} material={knobMat}>
-              <boxGeometry args={[0.04, 0.02, 0.025]} />
-            </mesh>
-          </group>
-        ))}
-        <mesh position={[0, 0.001, 0.28]}>
-          <boxGeometry args={[0.2, 0.004, 0.012]} />
+        {/* all 16 EQ knobs in one merged mesh, all fader slots in another (2 draw calls, not 21) */}
+        <mesh geometry={staticParts.knobs} material={knobMat} />
+        <mesh geometry={staticParts.slots}>
           <meshBasicMaterial color="#000" />
         </mesh>
+        {[-0.12, -0.04, 0.04, 0.12].map((fx, i) => (
+          <mesh key={fx} position={[fx, 0.012, 0.13]} ref={(m) => { if (m) faders.current[i] = m; }} material={knobMat}>
+            <boxGeometry args={[0.04, 0.02, 0.025]} />
+          </mesh>
+        ))}
         <mesh ref={xfader} position={[0, 0.012, 0.28]} material={knobMat}>
           <boxGeometry args={[0.025, 0.02, 0.045]} />
         </mesh>

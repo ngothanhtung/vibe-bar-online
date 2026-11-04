@@ -6,10 +6,11 @@ import * as THREE from "three";
 import { pulse } from "./pulse";
 import { useClub, type Patron } from "@/lib/store";
 import { addLabel, removeLabel } from "./labels";
-import { createRig, dressRig, FIGURE_HEIGHT, instancedMaterial, makeLook, PART_KEYS, partGeometries, poseRig, randomLookSeed, CHILL_DANCES, DANCES, FLASHMOB_DANCES, PARTY_DANCES, type DanceStyle, type Rig } from "./chibi";
+import { POSE_PRIORITY, registerFigure, useFigure } from "./figures";
+import { createRig, FIGURE_HEIGHT, makeLook, poseRig, randomLookSeed, CHILL_DANCES, DANCES, FLASHMOB_DANCES, PARTY_DANCES, type DanceStyle, type Rig } from "./chibi";
 import { AVATAR_COLORS, nameDealer } from "@/lib/content";
 
-export const BOUNDS = { minX: -6.6, maxX: 6.6, minZ: -2.2, maxZ: 7 };
+export const BOUNDS = { minX: -9.6, maxX: 9.6, minZ: -3.0, maxZ: 10 };
 export const clampX = (x: number) => Math.min(BOUNDS.maxX, Math.max(BOUNDS.minX, x));
 export const clampZ = (z: number) => Math.min(BOUNDS.maxZ, Math.max(BOUNDS.minZ, z));
 
@@ -48,66 +49,42 @@ function chooseDance(state: DanceState, chosen?: number): DanceStyle {
   return state.dance;
 }
 
-/** Background NPC crowd of instanced chibis so the club never feels empty. */
-export function Crowd({ count = 46 }: { count?: number }) {
-  const { figures, meshes } = useMemo(() => {
+/** Background NPC crowd so the club never feels empty (drawn by the shared FigureInstancer). */
+export function Crowd({ count = 72 }: { count?: number }) {
+  const figures = useMemo(() => {
     const dealName = nameDealer();
-    const figures = Array.from({ length: count }, () => {
+    return Array.from({ length: count }, () => {
       // keep a lane in the middle of the floor free for real patrons
       let x = 0;
-      while (Math.abs(x) < 2.2) x = (Math.random() - 0.5) * 13;
+      while (Math.abs(x) < 2.4) x = (Math.random() - 0.5) * 19;
       const look = makeLook(randomLookSeed(), AVATAR_COLORS[Math.floor(Math.random() * AVATAR_COLORS.length)]);
       const rig = createRig(look);
-      const z = -1.8 + Math.random() * 6.5;
+      const z = -2.4 + Math.random() * 11.5;
       rig.root.position.set(x, 0, z);
       rig.root.rotation.y = Math.atan2(-x, -5 - z) + (Math.random() - 0.5) * 0.9; // roughly face the DJ
       rig.root.scale.setScalar((look.gender === "f" ? 0.92 : 0.98) + Math.random() * 0.1);
       const seed = Math.random();
       return { rig, seed, dance: newDanceState(), palette: look.palette, name: dealName(look.gender) };
     });
-
-    // One instanced mesh per part shape; per-instance colors dress each figure.
-    // Looks differ, so count each part shape across the whole crowd.
-    const total: Record<string, number> = {};
-    for (const f of figures) for (const { key } of f.rig.parts) total[key] = (total[key] ?? 0) + 1;
-    const g = partGeometries();
-    const meshes = PART_KEYS.filter((key) => total[key]).map((key) => {
-      const n = total[key];
-      const mesh = new THREE.InstancedMesh(g[key], instancedMaterial(), n);
-      mesh.frustumCulled = false;
-      mesh.raycast = () => {};
-      return { key, mesh };
-    });
-    // Instance order per part is the same every frame, so colors can be set once here.
-    const byKey = Object.fromEntries(meshes.map((m) => [m.key, m.mesh]));
-    const cursor: Record<string, number> = {};
-    const c = new THREE.Color();
-    for (const f of figures)
-      for (const { key, slot } of f.rig.parts) {
-        const i = (cursor[key] = (cursor[key] ?? -1) + 1);
-        byKey[key].setColorAt(i, c.set(f.palette[slot]));
-      }
-    return { figures, meshes };
   }, [count]);
 
-  useEffect(
-    () => () => {
-      meshes.forEach((m) => m.mesh.dispose());
-    },
-    [meshes],
-  );
+  useEffect(() => {
+    const unregister = figures.map((f) => registerFigure({ rig: f.rig, palette: f.palette, inScene: false }));
+    return () => unregister.forEach((u) => u());
+  }, [figures]);
 
-  // Small name tags above every dancer in the crowd.
+  // Small name tags above every dancer in the crowd (hidden when far from the camera).
   useEffect(() => {
     const labels = figures.map((f) => {
       const label = addLabel(
         "nametag npc",
         (out) => {
-          f.rig.head.getWorldPosition(out);
-          out.y += 0.62;
+          out.copy(f.rig.root.position);
+          out.y += FIGURE_HEIGHT + 0.12;
           return true;
         },
         6,
+        13,
       );
       label.el.textContent = f.name;
       label.el.style.borderColor = f.palette.outfit;
@@ -118,8 +95,6 @@ export function Crowd({ count = 46 }: { count?: number }) {
 
   useFrame(() => {
     const energy = crowdEnergy();
-    const cursor: Record<string, number> = {};
-    const byKey = Object.fromEntries(meshes.map((m) => [m.key, m.mesh]));
     for (const f of figures) {
       poseRig(f.rig, {
         time: pulse.time,
@@ -129,33 +104,21 @@ export function Crowd({ count = 46 }: { count?: number }) {
         style: chooseDance(f.dance),
         seed: f.seed,
       });
-      f.rig.root.updateMatrixWorld(true);
-      for (const { key, node } of f.rig.parts) {
-        const i = (cursor[key] = (cursor[key] ?? -1) + 1);
-        byKey[key].setMatrixAt(i, node.matrixWorld);
-      }
     }
-    meshes.forEach((m) => (m.mesh.instanceMatrix.needsUpdate = true));
-  });
+  }, POSE_PRIORITY);
 
-  return (
-    <group>
-      {meshes.map((m) => (
-        <primitive key={m.key} object={m.mesh} />
-      ))}
-    </group>
-  );
+  return null;
 }
 
 /** One person's chibi body; rebuilt whenever their outfit seed, gender or color changes. */
 function AvatarBody({ look, gender, color, rigRef }: { look: number; gender?: "m" | "f"; color: string; rigRef: { current: Rig | null } }) {
-  const rig = useMemo(() => {
+  const { rig, palette } = useMemo(() => {
     const l = makeLook(look, color, gender);
     const r = createRig(l);
-    dressRig(r, l.palette);
     if (l.gender === "f") r.root.scale.setScalar(0.95);
-    return r;
+    return { rig: r, palette: l.palette };
   }, [look, gender, color]);
+  useFigure(rig, palette);
   useEffect(() => {
     rigRef.current = rig;
   }, [rig, rigRef]);
@@ -216,7 +179,7 @@ function Avatar({ patron, isMe }: { patron: Patron; isMe: boolean }) {
         cheer: cheer.current,
       });
     if (ring.current) ring.current.scale.setScalar(1 + pulse.kick * 0.35);
-  });
+  }, POSE_PRIORITY);
 
   return (
     <group ref={group} position={[patron.x, 0, patron.z]}>

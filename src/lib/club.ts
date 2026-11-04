@@ -290,8 +290,8 @@ function startDemo(): () => void {
     id: "bot-" + i,
     name,
     color: AVATAR_COLORS[i % AVATAR_COLORS.length],
-    x: (Math.random() - 0.5) * 8,
-    z: Math.random() * 6 - 1,
+    x: (Math.random() - 0.5) * 12,
+    z: Math.random() * 9 - 1,
     lastSeen: Date.now(),
     bot: true,
     look: Math.floor(Math.random() * 2 ** 31),
@@ -307,7 +307,7 @@ function startDemo(): () => void {
       dance: Math.random() < 0.08 ? (Math.random() < 0.5 ? -1 : Math.floor(Math.random() * 16)) : b.dance,
     })).map((b) =>
       Math.random() < 0.35
-        ? { ...b, x: Math.max(-6, Math.min(6, b.x + (Math.random() - 0.5) * 3)), z: Math.max(-2, Math.min(6.5, b.z + (Math.random() - 0.5) * 3)) }
+        ? { ...b, x: Math.max(-9, Math.min(9, b.x + (Math.random() - 0.5) * 3)), z: Math.max(-2.5, Math.min(9.5, b.z + (Math.random() - 0.5) * 3)) }
         : b,
     );
     useClub.getState().set({ patrons: moved });

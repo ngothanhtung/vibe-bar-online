@@ -1,8 +1,8 @@
 "use client";
 
-import { useEffect, useRef, type ReactNode } from "react";
+import { useEffect, useRef, useState, type ReactNode } from "react";
 import { Canvas, useFrame, useThree } from "@react-three/fiber";
-import { OrbitControls } from "@react-three/drei";
+import { OrbitControls, PerformanceMonitor } from "@react-three/drei";
 import { EffectComposer, Bloom, Vignette, ChromaticAberration } from "@react-three/postprocessing";
 import * as THREE from "three";
 import { engine } from "@/lib/audio";
@@ -11,10 +11,12 @@ import { pulse } from "./pulse";
 import { updateSpectrum } from "./spectrum";
 import { BarCounter, DanceFloor, DiscoBall, LedScreen, MovingLights, Room, Speakers } from "./Venue";
 import { Lasers } from "./Lasers";
+import { BarFurniture } from "./Furniture";
 import { DJBooth } from "./DjBooth";
 import { Crowd, Patrons, useMovement } from "./People";
 import { ConfettiLayer, FloatingFxLayer } from "./Effects";
 import { LabelLayer } from "./labels";
+import { FigureInstancer } from "./figures";
 import { usePixelCanvas } from "./pixel";
 
 /** Samples the audio engine once per frame into the shared `pulse` object. */
@@ -33,7 +35,7 @@ function AudioPulse() {
     pulse.hype += (s.hype / 100 - pulse.hype) * Math.min(1, dt * 2);
     pulse.drop = Math.max(0, 1 - (performance.now() - s.dropAt) / 3500);
     updateSpectrum(dt);
-  });
+  }, -2); // before anything that reads `pulse`
   return null;
 }
 
@@ -66,7 +68,7 @@ function Post() {
   return (
     <EffectComposer multisampling={0}>
       {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
-      <Bloom ref={bloom as any} mipmapBlur luminanceThreshold={0.25} luminanceSmoothing={0.3} intensity={1.2} />
+      <Bloom ref={bloom as any} mipmapBlur levels={6} resolutionScale={0.5} luminanceThreshold={0.25} luminanceSmoothing={0.3} intensity={1.2} />
       {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
       <ChromaticAberration ref={ca as any} offset={new THREE.Vector2(0.0005, 0.0005)} radialModulation={false} modulationOffset={0} />
       <Vignette eskil={false} offset={0.2} darkness={0.85} />
@@ -86,8 +88,8 @@ function ResponsiveCamera() {
 }
 
 const CAM_PRESETS = {
-  floor: { pos: new THREE.Vector3(0, 4.2, 11.5), target: new THREE.Vector3(0, 1.4, 0) },
-  stage: { pos: new THREE.Vector3(0.3, 3.1, 5.2), target: new THREE.Vector3(0, 2.0, -4.4) },
+  floor: { pos: new THREE.Vector3(0, 5.4, 15.5), target: new THREE.Vector3(0, 1.4, 2) },
+  stage: { pos: new THREE.Vector3(0.3, 3.4, 6.2), target: new THREE.Vector3(0, 2.8, -5.5) },
 };
 
 /** Glides the camera to the chosen preset, then hands control back to OrbitControls. */
@@ -118,7 +120,7 @@ function SceneContent() {
       <ResponsiveCamera />
       <LabelLayer />
       <color attach="background" args={["#05020a"]} />
-      <fog attach="fog" args={["#07030d", 12, 30]} />
+      <fog attach="fog" args={["#07030d", 20, 52]} />
       <MovingLights />
       <World>
         <Room />
@@ -127,6 +129,7 @@ function SceneContent() {
         <DJBooth />
         <Speakers />
         <BarCounter />
+        <BarFurniture />
         <DiscoBall />
         <Lasers />
         <Crowd />
@@ -134,13 +137,15 @@ function SceneContent() {
         <FloatingFxLayer />
         <ConfettiLayer />
       </World>
+      {/* every character, drawn in ~40 instanced calls (outside World: rigs already carry its transform) */}
+      <FigureInstancer />
       <CameraFocus />
       <OrbitControls
         makeDefault
-        target={[0, 1.4, 0]}
+        target={[0, 1.4, 2]}
         enablePan={false}
         minDistance={2.5}
-        maxDistance={16}
+        maxDistance={24}
         minPolarAngle={0.6}
         maxPolarAngle={1.45}
         enableDamping
@@ -152,14 +157,26 @@ function SceneContent() {
 
 export default function ClubScene() {
   const pixelArt = useClub((s) => s.pixelArt);
-  const pixel = usePixelCanvas(pixelArt);
+  // Resolution cap that drops automatically when the frame rate does (and climbs back when it recovers).
+  const [dprCap, setDprCap] = useState(1.5);
+  const pixel = usePixelCanvas(pixelArt, dprCap);
   return (
     <Canvas
       dpr={pixel.dpr}
-      camera={{ position: [0, 4.2, 11.5], fov: 55 }}
-      gl={{ antialias: false, powerPreference: "high-performance" }}
+      camera={{ position: [0, 5.4, 15.5], fov: 55 }}
+      gl={{ antialias: false, powerPreference: "high-performance", stencil: false }}
       style={{ position: "fixed", inset: 0, ...pixel.style }}
     >
+      {/* Steps the resolution between 0.85x and 1.5x with the measured frame rate. The floor keeps
+          it sharp, and a slow start (shader compiles) can't lock it low: on fallback it settles at 1x. */}
+      <PerformanceMonitor
+        ms={400}
+        iterations={8}
+        onDecline={() => setDprCap((c) => Math.max(0.85, +(c - 0.15).toFixed(2)))}
+        onIncline={() => setDprCap((c) => Math.min(1.5, +(c + 0.15).toFixed(2)))}
+        flipflops={6}
+        onFallback={() => setDprCap(1)}
+      />
       <SceneContent />
     </Canvas>
   );

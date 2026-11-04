@@ -9,8 +9,9 @@ import { useFrame } from "@react-three/fiber";
 import * as THREE from "three";
 import { mergeGeometries } from "three/examples/jsm/utils/BufferGeometryUtils.js";
 import { pulse } from "./pulse";
+import { POSE_PRIORITY, useFigure } from "./figures";
 import { beamMaterial } from "./Lasers";
-import { createRig, dressRig, FLASHMOB_DANCES, GOGO_DANCES, poseRig, type Look } from "./chibi";
+import { createRig, FLASHMOB_DANCES, GOGO_DANCES, poseRig, type Look } from "./chibi";
 import { useClub } from "@/lib/store";
 import { useStageTag } from "./labels";
 
@@ -285,12 +286,12 @@ const PODIUM_H = 1.0;
 function GogoPodium({ x, name, look, light, seed }: { x: number; name: string; look: Look; light: string; seed: number }) {
   const rig = useMemo(() => {
     const r = createRig(look);
-    dressRig(r, look.palette);
     return r;
   }, [look]);
   const ring = useRef<THREE.MeshBasicMaterial>(null);
   const dancer = useRef<THREE.Group>(null);
   useStageTag(dancer, name, light);
+  useFigure(rig, look.palette);
   const band = useRef<THREE.MeshBasicMaterial>(null);
   const spotMat = useMemo(() => {
     const m = beamMaterial(0.3);
@@ -312,7 +313,7 @@ function GogoPodium({ x, name, look, light, seed }: { x: number; name: string; l
     if (ring.current) ring.current.color.set(light).multiplyScalar(k + 0.3);
     if (band.current) band.current.color.setHSL((pulse.time * 0.15 + seed) % 1, 1, 0.3 + pulse.kick * 0.3);
     spotMat.opacity = 0.16 + pulse.kick * 0.25;
-  });
+  }, POSE_PRIORITY);
 
   return (
     <group position={[x, 0, 1.4]}>

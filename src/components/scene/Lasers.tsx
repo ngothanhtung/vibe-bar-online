@@ -16,10 +16,10 @@ const BEAM_LEN = 22;
 /** Emitter heads: a row on the back truss plus a few on the side walls. */
 const EMITTERS: { pos: THREE.Vector3; side: number }[] = [
   ...[-8, -5.5, -3, -1, 1, 3, 5.5, 8].map((x) => ({ pos: new THREE.Vector3(x, 7.3, -6.6), side: Math.sign(x) })),
-  { pos: new THREE.Vector3(-11.6, 6.4, -1), side: -1 },
-  { pos: new THREE.Vector3(11.6, 6.4, -1), side: 1 },
-  { pos: new THREE.Vector3(-11.6, 6.4, 4), side: -1 },
-  { pos: new THREE.Vector3(11.6, 6.4, 4), side: 1 },
+  { pos: new THREE.Vector3(-16.6, 7.0, 0), side: -1 },
+  { pos: new THREE.Vector3(16.6, 7.0, 0), side: 1 },
+  { pos: new THREE.Vector3(-16.6, 7.0, 7), side: -1 },
+  { pos: new THREE.Vector3(16.6, 7.0, 7), side: 1 },
 ];
 const COUNT = EMITTERS.length * BEAMS_PER_EMITTER;
 
@@ -89,27 +89,27 @@ export function Lasers() {
         let lit = 1;
         switch (mode) {
           case 0: // big fans sweeping over the floor
-            target.set((u - 0.5) * 18 + Math.sin(t * speed * 1.3 + e) * 4, 0, 2 + Math.sin(t * speed + e * 0.7) * 4.5);
+            target.set((u - 0.5) * 26 + Math.sin(t * speed * 1.3 + e) * 5, 0, 3.5 + Math.sin(t * speed + e * 0.7) * 6);
             break;
           case 1: {
             // rotating cones ("tunnels") around moving hot spots
             const a = (k / BEAMS_PER_EMITTER) * Math.PI * 2 + t * speed * 2.5 * (e % 2 ? 1 : -1);
             const r = 2.2 + Math.sin(t * 2 + e) * 0.8;
-            target.set(Math.sin(t * 0.5 + e) * 3 + Math.cos(a) * r, 0, 2 + Math.cos(t * 0.4 + e) * 2 + Math.sin(a) * r);
+            target.set(Math.sin(t * 0.5 + e) * 5 + Math.cos(a) * r, 0, 3.5 + Math.cos(t * 0.4 + e) * 3 + Math.sin(a) * r);
             break;
           }
           case 2: {
             // scissors: left and right banks sweep across each other
             const sweep = ((u + t * speed * 0.25) % 1) * 2 - 1;
-            target.set(-em.side * sweep * 9, 0, -1 + u * 8);
+            target.set(-em.side * sweep * 13, 0, -2 + u * 12);
             break;
           }
           case 3: // chase: one beam per emitter fires on each 16th, racing across
-            target.set((u - 0.5) * 16, 0, 2.5 + Math.sin(e) * 3);
+            target.set((u - 0.5) * 22, 0, 3.5 + Math.sin(e) * 4.5);
             lit = (k + e) % BEAMS_PER_EMITTER === step % BEAMS_PER_EMITTER ? 1.6 : 0.08;
             break;
           case 4: // flat beams shooting over the crowd's heads toward the back wall
-            target.set((u - 0.5) * 22 + Math.sin(t * speed + e) * 2, 3.6 + Math.sin(t * 3 + k + e) * 0.6, 12);
+            target.set((u - 0.5) * 30 + Math.sin(t * speed + e) * 2, 3.8 + Math.sin(t * 3 + k + e) * 0.6, 16);
             break;
         }
         dir.subVectors(target, em.pos).normalize();
@@ -203,8 +203,8 @@ function LaserSheet() {
     uniforms.uHue.value = pulse.drop > 0.15 ? (pulse.time * 0.3) % 1 : 0.12;
   });
   return (
-    <mesh position={[0, 3.3, 3]} rotation-x={-Math.PI / 2} raycast={() => null}>
-      <planeGeometry args={[26, 20]} />
+    <mesh position={[0, 3.3, 4]} rotation-x={-Math.PI / 2} raycast={() => null}>
+      <planeGeometry args={[34, 24]} />
       <shaderMaterial
         uniforms={uniforms}
         transparent

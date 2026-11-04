@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useRef } from "react";
+import { useEffect, useMemo, useRef } from "react";
 import { useFrame, type ThreeEvent } from "@react-three/fiber";
 import { Sparkles, Text } from "@react-three/drei";
 import * as THREE from "three";
@@ -8,7 +8,7 @@ import { pulse } from "./pulse";
 import { SPECTRUM_GLSL, spectrumTexture } from "./spectrum";
 import { useClub } from "@/lib/store";
 
-export const FLOOR = { cols: 14, rows: 10, size: 1, x0: -7, z0: -2.5 };
+export const FLOOR = { cols: 20, rows: 14, size: 1, x0: -10, z0: -3.5 };
 
 const tmpObj = new THREE.Object3D();
 const tmpColor = new THREE.Color();
@@ -24,7 +24,7 @@ export function DanceFloor({ onPick }: { onPick: (x: number, z: number) => void 
       for (let j = 0; j < FLOOR.rows; j++) {
         const x = FLOOR.x0 + i + 0.5;
         const z = FLOOR.z0 + j + 0.5;
-        arr.push({ x, z, d: Math.hypot(x, z - 2) });
+        arr.push({ x, z, d: Math.hypot(x, z - 3.5) });
       }
     return arr;
   }, []);
@@ -68,8 +68,8 @@ export function DanceFloor({ onPick }: { onPick: (x: number, z: number) => void 
         <meshBasicMaterial toneMapped={false} />
       </instancedMesh>
       {/* dark grout under the tiles */}
-      <mesh rotation-x={-Math.PI / 2} position={[0, 0, 2]}>
-        <planeGeometry args={[30, 30]} />
+      <mesh rotation-x={-Math.PI / 2} position={[0, 0, 4]}>
+        <planeGeometry args={[44, 44]} />
         <meshStandardMaterial color="#05030a" roughness={0.4} metalness={0.6} />
       </mesh>
     </group>
@@ -86,16 +86,17 @@ export function Room() {
     });
   });
   const trimDefs: [number, number, number, number, number, number][] = [
-    [-11.9, 0.3, 2, 0.06, 0.06, 18],
-    [11.9, 0.3, 2, 0.06, 0.06, 18],
-    [-11.9, 7.5, 2, 0.06, 0.06, 18],
-    [11.9, 7.5, 2, 0.06, 0.06, 18],
-    [0, 7.5, -7.9, 24, 0.06, 0.06],
+    [-16.9, 0.3, 2, 0.06, 0.06, 26],
+    [16.9, 0.3, 2, 0.06, 0.06, 26],
+    [-16.9, 10.4, 2, 0.06, 0.06, 26],
+    [16.9, 10.4, 2, 0.06, 0.06, 26],
+    [0, 10.4, -11.9, 34, 0.06, 0.06],
+    [0, 0.3, -11.9, 34, 0.06, 0.06],
   ];
   return (
     <group>
-      <mesh position={[0, 4, 2]}>
-        <boxGeometry args={[24, 8, 20]} />
+      <mesh position={[0, 5.5, 2]}>
+        <boxGeometry args={[34, 11, 28]} />
         <meshStandardMaterial color="#0d0716" side={THREE.BackSide} roughness={0.9} />
       </mesh>
       {trimDefs.map(([x, y, z, w, h, d], i) => (
@@ -113,13 +114,13 @@ varying vec2 vUv;
 void main() { vUv = uv; gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0); }
 `;
 const screenFragment = /* glsl */ `
-uniform float uTime; uniform float uKick; uniform float uMode;
+uniform float uTime; uniform float uKick; uniform float uMode; uniform vec2 uGrid;
 ${SPECTRUM_GLSL}
 varying vec2 vUv;
 vec3 hsl(float h){ return clamp(abs(mod(h*6.0+vec3(0.,4.,2.),6.)-3.)-1.,0.,1.); }
 void main(){
-  // 96 x 24 LED matrix showing a mirrored spectrum analyser: bass in the middle, treble at the edges
-  vec2 grid = vec2(96.0, 24.0);
+  // LED matrix showing a mirrored spectrum analyser: bass in the middle, treble at the edges
+  vec2 grid = uGrid;
   vec2 cell = floor(vUv * grid);
   vec2 f = fract(vUv * grid);
   float band = abs((cell.x + 0.5) / grid.x - 0.5) * 2.0;
@@ -141,29 +142,52 @@ void main(){
 `;
 
 /** Giant LED wall behind the DJ showing the visualizer + the latest shout-out. */
+/** One LED panel running the spectrum shader; `cells` sets the LED grid (≈ 6.7 LEDs per metre). */
+function LedPanel({ size, cells, shared }: { size: [number, number]; cells: [number, number]; shared: Record<string, THREE.IUniform> }) {
+  const uniforms = useMemo(() => ({ ...shared, uGrid: { value: new THREE.Vector2(...cells) } }), [shared, cells]);
+  return (
+    <mesh raycast={() => null}>
+      <planeGeometry args={size} />
+      <shaderMaterial vertexShader={screenVertex} fragmentShader={screenFragment} uniforms={uniforms} toneMapped={false} />
+    </mesh>
+  );
+}
+
+const MAIN_CELLS: [number, number] = [160, 44];
+const WING_CELLS: [number, number] = [54, 37];
+
+/**
+ * The back of the club: a 24 m LED equalizer wall with two angled wing screens wrapping around
+ * the stage, plus the title and the latest shout-out.
+ */
 export function LedScreen() {
-  const mat = useRef<THREE.ShaderMaterial>(null);
   const latest = useClub((s) => s.shouts.find((x) => x.kind === "chat"));
-  const uniforms = useMemo(() => ({ uTime: { value: 0 }, uKick: { value: 0 }, uMode: { value: 0 }, uSpec: { value: spectrumTexture } }), []);
+  // shared uniform objects: one update drives all three panels
+  const shared = useMemo(() => ({ uTime: { value: 0 }, uKick: { value: 0 }, uMode: { value: 0 }, uSpec: { value: spectrumTexture } }), []);
   useFrame((_, dt) => {
-    uniforms.uTime.value = pulse.time;
-    uniforms.uKick.value = pulse.kick;
+    shared.uTime.value = pulse.time;
+    shared.uKick.value = pulse.kick;
     const wantRainbow = Math.floor(pulse.beat / 16) % 2;
-    uniforms.uMode.value += (wantRainbow - uniforms.uMode.value) * Math.min(1, dt * 2);
+    shared.uMode.value += (wantRainbow - shared.uMode.value) * Math.min(1, dt * 2);
   });
   const shout = latest ? `${latest.name}: ${latest.text}` : "Chào mừng tới Quẩy Bar Online!";
   return (
-    <group position={[0, 4.3, -7.6]}>
-      <mesh>
-        <planeGeometry args={[12, 4]} />
-        <shaderMaterial ref={mat} vertexShader={screenVertex} fragmentShader={screenFragment} uniforms={uniforms} toneMapped={false} />
-      </mesh>
-      <Text position={[0, 1.0, 0.05]} fontSize={0.9} color="#ffffff" anchorX="center" anchorY="middle" outlineWidth={0.04} outlineColor="#ff2bd6">
-        QUẨY BAR ONLINE
-      </Text>
-      <Text position={[0, 0.05, 0.05]} fontSize={0.36} maxWidth={11} color="#fff7a8" anchorX="center" anchorY="middle" textAlign="center" outlineWidth={0.02} outlineColor="#000">
-        {shout.slice(0, 90)}
-      </Text>
+    <group>
+      <group position={[0, 4.95, -11.6]}>
+        <LedPanel size={[24, 6.6]} cells={MAIN_CELLS} shared={shared} />
+        <Text position={[0, 2.35, 0.05]} fontSize={1.3} color="#ffffff" anchorX="center" anchorY="middle" outlineWidth={0.05} outlineColor="#ff2bd6">
+          QUẨY BAR ONLINE
+        </Text>
+        <Text position={[0, 1.25, 0.05]} fontSize={0.5} maxWidth={20} color="#fff7a8" anchorX="center" anchorY="middle" textAlign="center" outlineWidth={0.03} outlineColor="#000">
+          {shout.slice(0, 90)}
+        </Text>
+      </group>
+      {/* angled wings */}
+      {[-1, 1].map((side) => (
+        <group key={side} position={[side * 14.1, 4.7, -9.9]} rotation-y={-side * 0.62}>
+          <LedPanel size={[8, 5.5]} cells={WING_CELLS} shared={shared} />
+        </group>
+      ))}
     </group>
   );
 }
@@ -176,7 +200,7 @@ function Speaker({ x }: { x: number }) {
     cones.current.forEach((c) => c && c.scale.set(s, 1, s));
   });
   return (
-    <group position={[x, 0, -5.5]}>
+    <group position={[x, 0, -5.3]}>
       <mesh position={[0, 1.6, 0]}>
         <boxGeometry args={[1.4, 3.2, 1]} />
         <meshStandardMaterial color="#0c0c10" roughness={0.6} />
@@ -194,8 +218,8 @@ function Speaker({ x }: { x: number }) {
 export function Speakers() {
   return (
     <>
-      <Speaker x={-4.6} />
-      <Speaker x={4.6} />
+      <Speaker x={-6.4} />
+      <Speaker x={6.4} />
     </>
   );
 }
@@ -212,7 +236,7 @@ export function BarCounter() {
     [],
   );
   return (
-    <group position={[10, 0, 2]}>
+    <group position={[15.4, 0, 3]}>
       <mesh position={[0, 0.6, 0]}>
         <boxGeometry args={[1.2, 1.2, 8]} />
         <meshStandardMaterial color="#1b0f12" roughness={0.5} metalness={0.3} />
@@ -226,16 +250,36 @@ export function BarCounter() {
         <boxGeometry args={[0.3, 0.06, 7]} />
         <meshBasicMaterial color="#ff7a1a" toneMapped={false} />
       </mesh>
-      {bottles.map((b, i) => (
-        <mesh key={i} position={[1.7, 2.23 + b.h / 2, b.z]}>
-          <cylinderGeometry args={[0.07, 0.08, b.h, 10]} />
-          <meshStandardMaterial color={b.color} emissive={b.color} emissiveIntensity={0.7} transparent opacity={0.85} />
-        </mesh>
-      ))}
+      <BottleRow bottles={bottles} />
       <Text position={[1.8, 3.6, 0]} rotation-y={-Math.PI / 2} fontSize={0.8} color="#ffb300" outlineWidth={0.03} outlineColor="#ff3b00">
         BAR
       </Text>
     </group>
+  );
+}
+
+/** The glowing bottles on the bar shelf, as one instanced mesh. */
+function BottleRow({ bottles }: { bottles: { z: number; h: number; color: THREE.Color }[] }) {
+  const ref = useRef<THREE.InstancedMesh>(null);
+  useEffect(() => {
+    const m = ref.current;
+    if (!m) return;
+    const o = new THREE.Object3D();
+    bottles.forEach((b, i) => {
+      o.position.set(1.7, 2.23 + b.h / 2, b.z);
+      o.scale.set(1, b.h, 1);
+      o.updateMatrix();
+      m.setMatrixAt(i, o.matrix);
+      m.setColorAt(i, b.color);
+    });
+    m.instanceMatrix.needsUpdate = true;
+    if (m.instanceColor) m.instanceColor.needsUpdate = true;
+  }, [bottles]);
+  return (
+    <instancedMesh ref={ref} args={[undefined, undefined, bottles.length]} raycast={() => null}>
+      <cylinderGeometry args={[0.07, 0.08, 1, 10]} />
+      <meshBasicMaterial transparent opacity={0.85} toneMapped={false} />
+    </instancedMesh>
   );
 }
 
@@ -246,7 +290,7 @@ export function DiscoBall() {
     if (ball.current) ball.current.rotation.y += dt * (0.3 + pulse.hype * 0.6);
   });
   return (
-    <group ref={ball} position={[0, 6.4, 1]}>
+    <group ref={ball} position={[0, 7.2, 3]}>
       <mesh position={[0, 0.9, 0]}>
         <cylinderGeometry args={[0.01, 0.01, 1.6]} />
         <meshBasicMaterial color="#555" />
@@ -255,7 +299,7 @@ export function DiscoBall() {
         <icosahedronGeometry args={[0.7, 2]} />
         <meshStandardMaterial color="#e8e8ff" metalness={1} roughness={0.08} flatShading emissive="#6655aa" emissiveIntensity={0.4} />
       </mesh>
-      <Sparkles count={260} scale={[22, 7, 18]} position={[0, -2.6, 0]} size={4} speed={0} color="#ffffff" opacity={0.7} />
+      <Sparkles count={320} scale={[32, 8, 24]} position={[0, -3, 0]} size={4} speed={0} color="#ffffff" opacity={0.7} />
     </group>
   );
 }
@@ -267,8 +311,8 @@ export function MovingLights() {
     const t = pulse.time;
     lights.current.forEach((l, i) => {
       if (!l) return;
-      l.position.x = Math.sin(t * 0.6 + i * 2.1) * 6;
-      l.position.z = 2 + Math.cos(t * 0.5 + i * 1.3) * 4;
+      l.position.x = Math.sin(t * 0.6 + i * 2.1) * 9;
+      l.position.z = 3.5 + Math.cos(t * 0.5 + i * 1.3) * 5.5;
       l.intensity = 18 + pulse.kick * 40 + pulse.drop * 60;
       l.color.setHSL((t * 0.05 + i / 3) % 1, 1, 0.55);
     });
@@ -278,7 +322,7 @@ export function MovingLights() {
       <ambientLight intensity={0.25} />
       <hemisphereLight args={["#6a3cff", "#100018", 0.5]} />
       {[0, 1, 2].map((i) => (
-        <pointLight key={i} ref={(l) => { if (l) lights.current[i] = l; }} position={[0, 4, 2]} distance={14} decay={1.6} />
+        <pointLight key={i} ref={(l) => { if (l) lights.current[i] = l; }} position={[0, 4.5, 3]} distance={20} decay={1.5} />
       ))}
       <pointLight position={[0, 4, -3]} color="#ff2bd6" intensity={20} distance={10} />
     </>

@@ -11,7 +11,7 @@ const pixelDpr = () => (typeof window === "undefined" ? 1 : Math.min(1, Math.max
  * Canvas props for the pixel-art look: a small drawing buffer that the browser upscales with
  * nearest-neighbour sampling, so outlines, lasers and bloom all turn into chunky pixels.
  */
-export function usePixelCanvas(enabled: boolean) {
+export function usePixelCanvas(enabled: boolean, dprCap = 1.5) {
   const [dpr, setDpr] = useState(pixelDpr);
   useEffect(() => {
     const onResize = () => setDpr(pixelDpr());
@@ -19,7 +19,7 @@ export function usePixelCanvas(enabled: boolean) {
     return () => window.removeEventListener("resize", onResize);
   }, []);
   return {
-    dpr: enabled ? dpr : ([1, 1.75] as [number, number]),
+    dpr: enabled ? dpr : Math.min(typeof window === "undefined" ? 1 : window.devicePixelRatio, dprCap),
     style: { imageRendering: enabled ? ("pixelated" as const) : ("auto" as const) },
   };
 }

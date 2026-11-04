@@ -15,16 +15,21 @@ export interface Label {
   place: (out: THREE.Vector3) => boolean;
   /** Size multiplier relative to distance (like drei's distanceFactor). */
   distanceFactor: number;
+  /** Hide the label beyond this camera distance (keeps far crowds uncluttered and cheap). */
+  maxDistance: number;
+  /** Last values written to the DOM, so unchanged labels cost nothing. */
+  shown: boolean;
+  transform: string;
 }
 
 const labels = new Set<Label>();
 let layer: HTMLDivElement | null = null;
 
-export function addLabel(className: string, place: Label["place"], distanceFactor = 9): Label {
+export function addLabel(className: string, place: Label["place"], distanceFactor = 9, maxDistance = Infinity): Label {
   const el = document.createElement("div");
   el.className = className;
-  Object.assign(el.style, { position: "absolute", left: "0", top: "0", willChange: "transform", pointerEvents: "none" });
-  const label = { el, place, distanceFactor };
+  Object.assign(el.style, { position: "absolute", left: "0", top: "0", willChange: "transform", pointerEvents: "none", display: "none" });
+  const label: Label = { el, place, distanceFactor, maxDistance, shown: false, transform: "" };
   labels.add(label);
   layer?.appendChild(el);
   return label;
@@ -57,22 +62,27 @@ export function LabelLayer() {
   }, [gl]);
 
   useFrame(({ camera, size }) => {
+    const show = (l: Label, on: boolean) => {
+      if (l.shown === on) return;
+      l.shown = on;
+      l.el.style.display = on ? "" : "none";
+    };
     labels.forEach((l) => {
-      if (!l.place(v)) {
-        l.el.style.display = "none";
-        return;
-      }
+      if (!l.place(v)) return show(l, false);
       const dist = camera.position.distanceTo(v);
+      if (dist > l.maxDistance) return show(l, false);
       v.project(camera);
-      if (v.z > 1) {
-        l.el.style.display = "none";
-        return;
+      if (v.z > 1 || v.x < -1.2 || v.x > 1.2 || v.y < -1.2 || v.y > 1.2) return show(l, false);
+      // whole pixels + 2-decimal scale keep the string stable, so still labels skip the DOM write
+      const x = Math.round((v.x * 0.5 + 0.5) * size.width);
+      const y = Math.round((-v.y * 0.5 + 0.5) * size.height);
+      const s = Math.min(1.6, Math.max(0.35, l.distanceFactor / dist)).toFixed(2);
+      const transform = `translate3d(${x}px, ${y}px, 0) translate(-50%, -50%) scale(${s})`;
+      show(l, true);
+      if (transform !== l.transform) {
+        l.transform = transform;
+        l.el.style.transform = transform;
       }
-      const x = (v.x * 0.5 + 0.5) * size.width;
-      const y = (-v.y * 0.5 + 0.5) * size.height;
-      const s = Math.min(1.6, Math.max(0.35, l.distanceFactor / dist));
-      l.el.style.display = "";
-      l.el.style.transform = `translate(${x}px, ${y}px) translate(-50%, -50%) scale(${s})`;
     });
   });
 
