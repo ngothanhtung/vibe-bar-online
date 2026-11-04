@@ -4,13 +4,13 @@ import { useEffect, useState } from "react";
 import { engine, GENRES, type Genre } from "@/lib/audio";
 import { doAction, rerollLook, sendShout, setDance } from "@/lib/club";
 import { DANCES } from "./scene/chibi";
-import { ACTIONS, DRUNK_LINES, FORTUNES, randomOf, SHOUT_IDEAS, type ActionKind } from "@/lib/content";
+import { ACTIONS, DRUNK_LINES, randomOf, SHOUT_IDEAS, type ActionKind } from "@/lib/content";
 import { useClub } from "@/lib/store";
 import { ytAudio } from "@/lib/youtube";
 import { NowPlaying, stopYouTube, YouTubeLinkForm } from "./YouTubeDj";
 
 const fmt = (n: number) => new Intl.NumberFormat("vi-VN").format(n);
-const ORDER: ActionKind[] = ["beer", "cocktail", "shot", "dzo", "quay", "confetti", "horn"];
+const ORDER: ActionKind[] = ["beer", "cocktail", "dzo", "quay", "confetti"];
 
 function TopBar() {
   const online = useClub((s) => s.online);
@@ -160,24 +160,6 @@ function Feed() {
   );
 }
 
-function FortuneModal({ onClose }: { onClose: () => void }) {
-  const [f] = useState(() => randomOf(FORTUNES));
-  const [no] = useState(() => 1 + Math.floor(Math.random() * 99));
-  return (
-    <div className="fixed inset-0 z-40 grid place-items-center bg-black/60 p-4 backdrop-blur-sm" onClick={onClose}>
-      <div className="fortune-card max-w-sm p-6 text-center" onClick={(e) => e.stopPropagation()}>
-        <div className="text-5xl">🔮</div>
-        <div className="mt-2 text-xs uppercase tracking-[0.3em] opacity-70">Quẻ số {no} · đêm nay</div>
-        <div className="font-display mt-2 text-2xl text-amber-300">{f.rank}</div>
-        <p className="mt-3 text-base leading-relaxed">{f.text}</p>
-        <button className="btn-primary mt-5 w-full" onClick={onClose}>
-          Nhận quẻ, quẩy tiếp 🕺
-        </button>
-      </div>
-    </div>
-  );
-}
-
 /** Grid of every dance; the pick shows on your avatar and is synced to everyone. */
 function DancePicker({ onClose }: { onClose: () => void }) {
   const dance = useClub((s) => s.me.dance);
@@ -209,7 +191,7 @@ function DancePicker({ onClose }: { onClose: () => void }) {
   );
 }
 
-function ActionBar({ onFortune }: { onFortune: () => void }) {
+function ActionBar() {
   const [text, setText] = useState("");
   const [dancesOpen, setDancesOpen] = useState(false);
   const dance = useClub((s) => s.me.dance);
@@ -227,10 +209,6 @@ function ActionBar({ onFortune }: { onFortune: () => void }) {
         <button className="action-btn" onClick={() => setDancesOpen((o) => !o)} aria-expanded={dancesOpen} title="Chọn điệu nhảy">
           <span className="text-2xl sm:text-3xl">{dance >= 0 ? DANCES[dance].emoji : "💃"}</span>
           <span className="text-[10px] sm:text-xs">Điệu nhảy</span>
-        </button>
-        <button className="action-btn action-gold" onClick={onFortune}>
-          <span className="text-2xl sm:text-3xl">🔮</span>
-          <span className="text-[10px] sm:text-xs">Xin quẻ</span>
         </button>
       </div>
       <form
@@ -310,20 +288,13 @@ function Overlays() {
 }
 
 export default function Hud() {
-  const [fortune, setFortune] = useState(false);
   return (
     <>
       <TopBar />
       <HypeMeter />
       <Feed />
-      <ActionBar
-        onFortune={() => {
-          engine.sfx("whoosh");
-          setFortune(true);
-        }}
-      />
+      <ActionBar />
       <Overlays />
-      {fortune && <FortuneModal onClose={() => setFortune(false)} />}
       <div className="pointer-events-none fixed bottom-1 right-2 z-10 hidden text-[10px] opacity-40 lg:block">
         WASD / chạm sàn để đi · kéo để xoay camera · cuộn để zoom
       </div>

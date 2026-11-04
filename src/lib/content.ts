@@ -10,24 +10,6 @@ export const ACTIONS: Record<ActionKind, { label: string; emoji: string; verb: s
   horn: { label: "Kèn hơi", emoji: "📯", verb: "thổi kèn hơi" },
 };
 
-/** "Xin quẻ" — the bar version of drawing a fortune stick at the pagoda. */
-export const FORTUNES: { rank: string; text: string }[] = [
-  { rank: "Thượng Thượng", text: "Đêm nay crush rep tin nhắn trong vòng 5 phút. Nhưng chỉ rep \"ok\"." },
-  { rank: "Thượng Cát", text: "Có người lạ mời bạn một shot. Uống xong mới biết là nước lọc. Vẫn vui." },
-  { rank: "Đại Cát", text: "DJ chơi đúng bài bạn thích. Bạn quẩy đến mức quên luôn tên mình." },
-  { rank: "Trung Cát", text: "Sáng mai tỉnh dậy ví vẫn còn, điện thoại vẫn còn. Phước đức ba đời." },
-  { rank: "Trung Bình", text: "Bạn sẽ hát theo bài nào cũng sai lời nhưng tự tin 100%." },
-  { rank: "Tiểu Cát", text: "Gặp lại người yêu cũ ở quầy bar. Họ béo lên. Bạn thì không." },
-  { rank: "Hạ Hạ", text: "Hóa đơn đêm nay dài hơn danh sách việc cần làm của bạn." },
-  { rank: "Cát Tường", text: "Bạn sẽ là người quẩy sung nhất bar, được cả phòng vỗ tay." },
-  { rank: "Bình An", text: "Đã uống rượu bia, nhớ đặt xe về nhà. Quẻ này ai cũng phải nhận." },
-  { rank: "Đại Phát", text: "Có người trả tiền hộ bàn bạn. Đừng hỏi là ai, cứ cảm ơn." },
-  { rank: "Hung Nhẹ", text: "Giày đẹp nhất của bạn sẽ bị giẫm đúng lúc drop." },
-  { rank: "Thượng Cát", text: "Tấm ảnh selfie đêm nay sẽ thành avatar dùng cả năm." },
-  { rank: "Trung Cát", text: "Bạn sẽ kết bạn với một người chỉ biết tên là \"Anh áo đỏ\"." },
-  { rank: "Hạ Cát", text: "Sáng mai có cuộc họp 8h. Vũ trụ đã nhắc, bạn tự quyết." },
-];
-
 export const DRUNK_LINES = [
   "Hơi say rồi đó nha 🫠",
   "Thế giới bắt đầu nghiêng nghiêng...",

@@ -317,7 +317,7 @@ function startDemo(): () => void {
     const b = randomOf(useClub.getState().patrons);
     if (!b) return;
     if (Math.random() < 0.6) {
-      const kind = randomOf(Object.keys(ACTIONS) as ActionKind[]);
+      const kind = randomOf(["beer", "cocktail", "dzo", "quay", "confetti"] as ActionKind[]);
       playAction(kind, b.x, b.z, false);
       pushLocalShout({ uid: b.id, name: b.name, color: b.color, text: ACTIONS[kind].verb, kind: "action", action: kind });
     } else {

@@ -10,9 +10,8 @@ Một club 3D chạy trên trình duyệt: sàn LED nhảy theo nhạc, sân kh�
 
 | Ở chùa online | Ở Quẩy Bar Online |
 |---|---|
-| Thắp hương | 🍺 Gọi bia · 🍸 Cocktail · 🥃 Làm 1 shot |
-| Gõ mõ | 🥂 Dzô 100% · 📯 Kèn hơi |
-| Xin xăm | 🔮 **Xin quẻ đêm nay** (14 quẻ, có cả quẻ "Hạ Hạ") |
+| Thắp hương | 🍺 Gọi bia · 🍸 Cocktail |
+| Gõ mõ | 🥂 Dzô 100% · 🕺 Quẩy lên · 🎉 Pháo giấy |
 | Cầu an | 🚕 Nhắc "Đã uống rượu bia thì không lái xe" khi bạn say |
 
 - **Nhân vật kiểu đồ chơi tối giản:** đầu tròn to với tóc bát úp, hai mắt chấm đen và miệng cười; thân hình trụ, tay chân dạng ống tròn, giày khối bo góc; màu mờ phẳng, không viền. Áo vest có sơ mi trắng và nơ cổ, váy liền xòe chuông. Nút **👾 Pixel** để chuyển sang render pixel art (mặc định tắt). Có nam và nữ (chọn ở màn hình vào bar), nhiều kiểu tóc (bát úp, dựng gai, trọc, dài, búi, đuôi ngựa, nón lưỡi trai), áo (thun, tay dài, ba lỗ, hoodie, váy liền), quần hoặc váy, kính, nơ. Có đồ dân chơi: kính đen, dây chuyền vàng, sơ mi hoa, áo khoác mở, nón bucket, snapback đội ngược, băng đô, tai mèo. Khoảng 1/5 số người mặc **trang phục siêu anh hùng** nguyên bản (không dùng thiết kế của Marvel/DC): áo choàng có ngôi sao và mặt nạ, bộ giáp có kính visor phát sáng, hoặc ninja. Áo choàng bay theo điệu nhảy. Áo theo màu bạn chọn; bấm **🎲 Đổi đồ** để random bộ khác, hoặc **🦸 Siêu anh hùng** để random một bộ siêu anh hùng. Cả bộ đồ được gói thành một số `look` và đồng bộ qua Firebase. Mở **`/lineup`** để xem đủ 31 điệu, mỗi nhân vật một điệu, dưới ánh sáng rõ.
@@ -35,7 +34,7 @@ Một club 3D chạy trên trình duyệt: sàn LED nhảy theo nhạc, sân kh�
 - **Câu hét trend:** cạnh ô "Hét gì đó lên màn hình LED" có nút **🎲** random 40 câu kiểu Gen Z đi bar ("Đỉnh nóc, kịch trần, bay phấp phới 🚀", "Khum say, chỉ hơi phê 🥴", "Mai tính, nay quẩy 😎"…).
 - **Nhạc tự tổng hợp** bằng Web Audio, không cần file mp3 nên không dính bản quyền: Vinahouse 138 BPM, EDM Bigroom 128, Lofi Chill 84. Visual bám đúng từng nhịp kick đã lên lịch.
 - **Phát nhạc từ YouTube:** bấm **▶ YouTube** trong thanh DJ rồi dán link (`youtube.com/watch?v=…`, `youtu.be/…`, `/shorts/…`, `music.youtube.com`). Chỉ phát tiếng, video được giấu trong khung 1px. Trình duyệt không cho đọc âm thanh từ YouTube, nên đèn và sàn chạy theo một đồng hồ nhịp: chỉnh BPM bằng −/+ hoặc bấm **👆 Tap nhịp** theo bài 4 lần để đèn bắt đúng nhịp. Video nào chủ kênh chặn nhúng thì sẽ báo lỗi.
-- **Độ phê:** mỗi hành động của bạn (và một phần của người khác) làm đầy thanh. Đầy 100% thì **DROP!!!**: chớp sáng, kèn hơi, laser và đám đông nhảy mạnh lên.
+- **Độ phê:** mỗi hành động của bạn (và một phần của người khác) làm đầy thanh. Đầy 100% thì **DROP!!!**: chớp sáng, laser và đám đông nhảy mạnh lên.
 - **Độ say:** uống càng nhiều thì cả thế giới càng nghiêng và màu bị lệch (chromatic aberration), rồi tỉnh dần theo thời gian.
 - **Multiplayer realtime:** thấy avatar và tên của người khác trên sàn, họ đi lại, uống, bắn pháo giấy là hiện ngay chỗ họ đứng. Câu hét chat được chiếu lên màn LED sau lưng DJ. Có bộ đếm toàn cầu (lần dzô, ly đã cạn, lượt quẩy, pháo giấy).
 - **Điều khiển:** WASD / phím mũi tên, hoặc chạm vào sàn để đi tới đó; kéo để xoay camera, cuộn để zoom.
@@ -83,7 +82,7 @@ src/
     Lineup.tsx            trang /lineup: mỗi điệu nhảy một nhân vật
     ClubApp.tsx           ghép gate + scene + HUD, chỉ chạy phía client
     EntryGate.tsx         nhập nickname, chọn màu, check 18+
-    Hud.tsx               action bar, chat, feed, độ phê, xin quẻ, overlay DROP
+    Hud.tsx               action bar, chat, feed, độ phê, overlay DROP
     scene/
       ClubScene.tsx       Canvas, postprocessing, camera, độ lắc khi say
       Venue.tsx           sàn LED, màn LED shader, loa, quầy bar, laser, disco ball
@@ -107,7 +106,7 @@ src/
     audio.ts              engine nhạc Web Audio + SFX + phân tích
     club.ts               đồng bộ Firebase / chế độ demo bot, doAction, sendShout
     store.ts              zustand store
-    content.ts            hành động, quẻ, lời bot
+    content.ts            hành động, tên, câu hét, lời bot
 ```
 
 ---
