@@ -7,7 +7,7 @@ import { pulse } from "./pulse";
 import { useClub, type Patron } from "@/lib/store";
 import { addLabel, removeLabel } from "./labels";
 import { createRig, dressRig, FIGURE_HEIGHT, instancedMaterial, makeLook, PART_KEYS, partGeometries, poseRig, randomLookSeed, CHILL_DANCES, DANCES, FLASHMOB_DANCES, PARTY_DANCES, type DanceStyle, type Rig } from "./chibi";
-import { AVATAR_COLORS } from "@/lib/content";
+import { AVATAR_COLORS, nameDealer } from "@/lib/content";
 
 export const BOUNDS = { minX: -6.6, maxX: 6.6, minZ: -2.2, maxZ: 7 };
 export const clampX = (x: number) => Math.min(BOUNDS.maxX, Math.max(BOUNDS.minX, x));
@@ -51,6 +51,7 @@ function chooseDance(state: DanceState, chosen?: number): DanceStyle {
 /** Background NPC crowd of instanced chibis so the club never feels empty. */
 export function Crowd({ count = 46 }: { count?: number }) {
   const { figures, meshes } = useMemo(() => {
+    const dealName = nameDealer();
     const figures = Array.from({ length: count }, () => {
       // keep a lane in the middle of the floor free for real patrons
       let x = 0;
@@ -62,7 +63,7 @@ export function Crowd({ count = 46 }: { count?: number }) {
       rig.root.rotation.y = Math.atan2(-x, -5 - z) + (Math.random() - 0.5) * 0.9; // roughly face the DJ
       rig.root.scale.setScalar((look.gender === "f" ? 0.92 : 0.98) + Math.random() * 0.1);
       const seed = Math.random();
-      return { rig, seed, dance: newDanceState(), palette: look.palette };
+      return { rig, seed, dance: newDanceState(), palette: look.palette, name: dealName(look.gender) };
     });
 
     // One instanced mesh per part shape; per-instance colors dress each figure.
@@ -95,6 +96,25 @@ export function Crowd({ count = 46 }: { count?: number }) {
     },
     [meshes],
   );
+
+  // Small name tags above every dancer in the crowd.
+  useEffect(() => {
+    const labels = figures.map((f) => {
+      const label = addLabel(
+        "nametag npc",
+        (out) => {
+          f.rig.head.getWorldPosition(out);
+          out.y += 0.62;
+          return true;
+        },
+        6,
+      );
+      label.el.textContent = f.name;
+      label.el.style.borderColor = f.palette.outfit;
+      return label;
+    });
+    return () => labels.forEach(removeLabel);
+  }, [figures]);
 
   useFrame(() => {
     const energy = crowdEnergy();

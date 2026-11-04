@@ -85,7 +85,7 @@ function ResponsiveCamera() {
 
 const CAM_PRESETS = {
   floor: { pos: new THREE.Vector3(0, 4.2, 11.5), target: new THREE.Vector3(0, 1.4, 0) },
-  stage: { pos: new THREE.Vector3(0.6, 2.9, -0.4), target: new THREE.Vector3(0, 1.8, -4.8) },
+  stage: { pos: new THREE.Vector3(0.3, 3.1, 5.2), target: new THREE.Vector3(0, 2.0, -4.4) },
 };
 
 /** Glides the camera to the chosen preset, then hands control back to OrbitControls. */

@@ -38,6 +38,9 @@ export type PartKey =
   | "hoodLow"
   | "sash"
   | "torso"
+  | "cropTop"
+  | "bikiniTop"
+  | "bikiniBottom"
   | "dress"
   | "skirt"
   | "hood"
@@ -53,16 +56,17 @@ export type Slot = "skin" | "hair" | "eye" | "white" | "blush" | "outfit" | "acc
 export const PART_KEYS: PartKey[] = [
   "head", "hair", "spikes", "hairBack", "bun", "pony", "capDome", "capBrim", "bow", "eye", "mouth", "blush", "glasses", "shades",
   "bucketHat", "headband", "catEar", "chain", "flower", "shirtFront", "bowtie", "cape", "emblem", "domino", "helmet", "visor", "core",
-  "hoodTop", "hoodLow", "sash", "torso", "dress", "skirt", "hood", "pelvis", "upperArm", "forearm", "hand", "thigh", "shin", "foot",
+  "hoodTop", "hoodLow", "sash", "torso", "cropTop", "bikiniTop", "bikiniBottom", "dress", "skirt", "hood", "pelvis", "upperArm", "forearm", "hand", "thigh", "shin", "foot",
 ];
 
 // Proportions: about three heads tall, the head as wide as the shoulders.
 const LIMB = { upperArm: 0.16, forearm: 0.15, thigh: 0.15, shin: 0.15 };
-export const HIP_HEIGHT = 0.37;
+// hips node height: hip joints sit 0.04 below it, then thigh + shin + shoe (0.0725) to the floor
+export const HIP_HEIGHT = 0.04 + 0.15 + 0.15 + 0.0725;
 const TORSO_H = 0.36; // spine joint -> neck joint (top of the body)
 const TORSO_DEPTH = 0.85; // body is a slightly flattened cylinder
 /** Height of the top of the head, for placing name tags. */
-export const FIGURE_HEIGHT = 1.3;
+export const FIGURE_HEIGHT = 1.34;
 
 const HEAD = { rx: 0.27, ry: 0.26, rz: 0.26, y: 0.25 };
 export const HEAD_SIZE = HEAD;
@@ -90,19 +94,25 @@ function ellipsoid(rx: number, ry: number, rz: number, seg = 20) {
   return g;
 }
 
-/** Rounded tube hanging down from its joint (origin at the top). */
+/**
+ * Capsule limb segment hanging down from its joint. Both rounded ends are centred exactly on the
+ * joints (y = 0 and y = -length), so two segments meeting at an elbow or knee always form one
+ * smooth, continuous bent tube, whatever the angle.
+ */
 function limb(rTop: number, rBottom: number, length: number) {
   const pts: THREE.Vector2[] = [];
-  const n = 6;
+  const n = 8;
+  // bottom cap: from the bottom pole up to the equator at y = -length
   for (let i = 0; i <= n; i++) {
     const a = (i / n) * (Math.PI / 2);
-    pts.push(new THREE.Vector2(Math.sin(a) * rBottom, -length + rBottom - Math.cos(a) * rBottom));
+    pts.push(new THREE.Vector2(Math.sin(a) * rBottom, -length - Math.cos(a) * rBottom));
   }
-  for (let i = n; i >= 0; i--) {
+  // top cap: from the equator at the joint up to the top pole
+  for (let i = 0; i <= n; i++) {
     const a = (i / n) * (Math.PI / 2);
-    pts.push(new THREE.Vector2(Math.sin(a) * rTop, -rTop + Math.cos(a) * rTop));
+    pts.push(new THREE.Vector2(Math.cos(a) * rTop, Math.sin(a) * rTop));
   }
-  const g = new THREE.LatheGeometry(pts, 16);
+  const g = new THREE.LatheGeometry(pts, 18);
   g.computeVertexNormals();
   return g;
 }
@@ -357,7 +367,15 @@ export function partGeometries() {
       return g;
     })(),
     torso: lathe(TORSO_PTS, TORSO_DEPTH),
+    // crop top: the upper band of the body, a hair bigger so it sits over the skin
+    cropTop: lathe(
+      [[0.0, 0.17], [0.181, 0.17], [0.183, 0.27], [0.17, 0.327], [0.124, 0.358], [0.0, 0.366]],
+      TORSO_DEPTH,
+    ),
     // sleeveless top flaring into a bell skirt down to the knees
+    // swimsuit pieces: a band over the chest and a band over the hips
+    bikiniTop: lathe([[0.18, 0.2], [0.183, 0.205], [0.184, 0.29], [0.18, 0.295]], TORSO_DEPTH),
+    bikiniBottom: lathe([[0.0, -0.08], [0.171, -0.08], [0.18, -0.03], [0.181, 0.0], [0.176, 0.008]], TORSO_DEPTH),
     dress: lathe([[0.0, -0.3], [0.31, -0.3], [0.29, -0.22], [0.2, -0.06], [0.175, 0.04], [0.178, 0.27], [0.165, 0.325], [0.12, 0.355], [0.0, 0.362]], 0.95),
     skirt: lathe([[0.0, -0.2], [0.26, -0.2], [0.2, 0.04], [0.0, 0.04]], 0.95),
     hood: (() => {
@@ -368,15 +386,15 @@ export function partGeometries() {
     })(),
     // shorts block / hips
     pelvis: lathe([[0.0, -0.08], [0.168, -0.08], [0.176, 0.03], [0.0, 0.03]], TORSO_DEPTH),
-    upperArm: limb(0.05, 0.048, LIMB.upperArm),
-    forearm: limb(0.048, 0.046, LIMB.forearm),
+    upperArm: limb(0.052, 0.049, LIMB.upperArm),
+    forearm: limb(0.0465, 0.044, LIMB.forearm),
     hand: (() => {
-      const g = ellipsoid(0.052, 0.055, 0.05, 12);
-      g.translate(0, -0.025, 0);
+      const g = ellipsoid(0.05, 0.055, 0.047, 12);
+      g.translate(0, -0.035, 0);
       return g;
     })(),
-    thigh: limb(0.062, 0.06, LIMB.thigh),
-    shin: limb(0.06, 0.058, LIMB.shin),
+    thigh: limb(0.066, 0.061, LIMB.thigh),
+    shin: limb(0.058, 0.054, LIMB.shin),
     // chunky block shoes
     foot: (() => {
       const g = new RoundedBoxGeometry(0.12, 0.075, 0.18, 3, 0.03);
@@ -422,13 +440,15 @@ export type Gender = "m" | "f";
 export interface Look {
   gender: Gender;
   hair: "short" | "bald" | "long" | "bun" | "pony" | "cap" | "spiky";
-  top: "tee" | "long" | "tank" | "hoodie" | "dress" | "floral" | "jacket";
-  bottom: "pants" | "shorts" | "skirt" | "none";
+  top: "tee" | "long" | "tank" | "hoodie" | "dress" | "floral" | "jacket" | "crop" | "bikini";
+  bottom: "pants" | "shorts" | "skirt" | "none" | "bikini";
   glasses: boolean;
   bow: boolean;
   blush: boolean;
   shades?: boolean;
   chain?: boolean;
+  /** Knee-high boots (shins take the shoe colour). */
+  boots?: boolean;
   hat?: "none" | "bucket" | "snapback" | "headband" | "catEars";
   /** Original superhero costumes (not any real franchise's design). */
   costume?: "none" | "cape" | "armor" | "ninja";
@@ -467,7 +487,7 @@ export function makeLook(seed: number, outfit: string, gender?: Gender): Look {
   const skin = pick(SKINS);
   const hair = g === "f" ? pick(["short", "short", "long", "long", "bun", "pony", "cap"] as const) : pick(["short", "short", "short", "spiky", "bald", "cap"] as const);
   const top = g === "f"
-    ? pick(["tee", "dress", "dress", "tank", "hoodie", "long", "floral", "jacket"] as const)
+    ? pick(["tee", "dress", "dress", "tank", "hoodie", "long", "floral", "jacket", "crop", "crop"] as const)
     : pick(["tee", "tee", "long", "tank", "hoodie", "floral", "floral", "jacket"] as const);
   const bottom: Look["bottom"] = top === "dress" ? "none" : g === "f" ? pick(["skirt", "pants", "shorts"] as const) : pick(["pants", "pants", "shorts"] as const);
   const costume: Look["costume"] = chance(0.2) ? pick(COSTUMES) : "none";
@@ -480,6 +500,7 @@ export function makeLook(seed: number, outfit: string, gender?: Gender): Look {
     glasses: !shades && chance(0.18),
     shades,
     chain: chance(0.28),
+    boots: g === "f" && chance(0.3),
     // heroes keep their heads clear: no hats or cat ears with a costume
     hat: hair === "cap" || costume !== "none" ? "none" : pick(["none", "none", "none", "none", "bucket", "snapback", "headband", "catEars"] as const),
     bow: g === "f" && (hair === "long" || hair === "pony" || hair === "bun") && chance(0.45),
@@ -539,22 +560,25 @@ export function createRig(look: Look): Rig {
   const suit = costume !== "none"; // full bodysuit
   const topKind = suit ? "tee" : look.top;
   const bottomKind = suit ? "pants" : look.bottom;
-  const sleeveless = !suit && (topKind === "tank" || topKind === "dress");
+  const sleeveless = !suit && (topKind === "tank" || topKind === "dress" || topKind === "crop" || topKind === "bikini");
   const sleeveUpper: Slot = sleeveless ? "skin" : "outfit";
   const sleeveLower: Slot = suit || topKind === "long" || topKind === "hoodie" || topKind === "jacket" ? "outfit" : "skin";
   const legUpper: Slot = suit ? "outfit" : bottomKind === "pants" || bottomKind === "shorts" ? "pants" : "skin";
-  const legLower: Slot = suit ? "outfit" : bottomKind === "pants" ? "pants" : "skin";
+  const legLower: Slot = suit ? "outfit" : look.boots ? "shoe" : bottomKind === "pants" ? "pants" : "skin";
   const handSlot: Slot = costume === "cape" ? "accent" : costume === "armor" ? "gold" : costume === "ninja" ? "outfit" : "skin";
   const footSlot: Slot = costume === "cape" ? "accent" : costume === "armor" ? "gold" : costume === "ninja" ? "dark" : "shoe";
 
   const root = new THREE.Object3D();
   const hips = node(root, 0, HIP_HEIGHT);
-  part(hips, "pelvis", suit ? "outfit" : bottomKind === "pants" || bottomKind === "shorts" ? "pants" : "outfit");
+  part(hips, "pelvis", suit ? "outfit" : bottomKind === "pants" || bottomKind === "shorts" ? "pants" : bottomKind === "bikini" ? "skin" : "outfit");
+  if (bottomKind === "bikini") part(hips, "bikiniBottom", "outfit");
   if (bottomKind === "skirt") part(hips, "skirt", "accent");
   if (costume === "ninja") part(hips, "sash", "accent");
   const spine = node(hips, 0, 0.03);
   spine.rotation.order = "YXZ";
-  part(spine, topKind === "dress" ? "dress" : "torso", "outfit");
+  part(spine, topKind === "dress" ? "dress" : "torso", topKind === "crop" || topKind === "bikini" ? "skin" : "outfit");
+  if (topKind === "bikini") part(spine, "bikiniTop", "outfit");
+  if (topKind === "crop") part(spine, "cropTop", "outfit");
   if (topKind === "hoodie") part(spine, "hood", "outfit");
   if (topKind === "jacket") {
     part(spine, "shirtFront", "white");
@@ -620,7 +644,7 @@ export function createRig(look: Look): Rig {
   }
 
   const arm = (side: 1 | -1) => {
-    const sh = node(spine, 0.2 * side, TORSO_H - 0.06);
+    const sh = node(spine, 0.19 * side, TORSO_H - 0.065);
     sh.rotation.order = "ZXY";
     part(sh, "upperArm", sleeveUpper);
     const el = node(sh, 0, -LIMB.upperArm);
@@ -689,6 +713,8 @@ export const DANCES = [
   { emoji: "🎸", name: "Headbang guitar" },
   { emoji: "🐍", name: "Sóng tay" },
   { emoji: "🦵", name: "Ngồi đá chân" },
+  { emoji: "💃", name: "Lắc hông" },
+  { emoji: "💁", name: "Vẩy tóc" },
 ] as const;
 
 export type DanceStyle = number;
@@ -696,7 +722,9 @@ export type DanceStyle = number;
 export const CHILL_DANCES: DanceStyle[] = [1, 3, 5, 14];
 /** High-energy dances the whole crowd does together on a DROP. */
 export const FLASHMOB_DANCES: DanceStyle[] = [12, 7, 4, 5, 15, 10, 8, 2];
-export const PARTY_DANCES: DanceStyle[] = [0, 1, 2, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15];
+export const PARTY_DANCES: DanceStyle[] = [0, 1, 2, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17];
+/** What the go-go dancers on the podiums cycle through. */
+export const GOGO_DANCES: DanceStyle[] = [16, 7, 17, 14, 5, 2, 16, 4];
 
 export interface PoseInput {
   time: number;
@@ -733,8 +761,9 @@ export function poseRig(r: Rig, p: PoseInput) {
 
   // --- reset everything, then lay down the default groove ---
   for (const i of [0, 1] as const) {
-    r.shoulder[i].rotation.set(0, 0, 0);
-    r.elbow[i].rotation.set(0, 0, 0);
+    // relaxed rest: arms slightly away from the body, elbows softly bent
+    r.shoulder[i].rotation.set(0, 0, i === 0 ? 0.1 : -0.1);
+    r.elbow[i].rotation.set(-0.15, 0, 0);
     r.wrist[i].rotation.set(0, 0, 0);
   }
   r.hips.position.set(0, HIP_HEIGHT, 0);
@@ -946,6 +975,28 @@ export function poseRig(r: Rig, p: PoseInput) {
       break;
     }
   }
+  if (p.style === 16) {
+    // hip sway: hips swing side to side, one arm overhead, the other on the hip, swapping every 2 beats
+    const w = S(PI * (B + ph));
+    const flip = Math.floor(B / 2) % 2 === 0;
+    r.hips.rotation.set(0, 0.15 * w, 0.22 * w);
+    r.hips.position.x = 0.05 * w;
+    r.spine.rotation.set(0.02, -0.1 * w, -0.18 * w);
+    r.head.rotation.set(-0.05, 0.2 * w, 0.15 * w);
+    arm(0, -0.25, 2.55 + 0.15 * S(t * 4), -0.7, 0, flip);
+    arm(1, 0.25, -0.55, -1.7, 0.6, flip);
+    leg(0, -0.15 - 0.15 * Math.max(0, w), 0.3 + 0.3 * Math.max(0, w));
+    leg(1, -0.15 - 0.15 * Math.max(0, -w), 0.3 + 0.3 * Math.max(0, -w));
+  } else if (p.style === 17) {
+    // hair whip: the head rolls in circles, arms flung wide
+    r.head.rotation.set(0.35 * S(t * 6), 0, 0.35 * Math.cos(t * 6));
+    r.spine.rotation.set(0.2 + 0.1 * S(t * 6), 0, 0.12 * Math.cos(t * 6));
+    shL.rotation.set(-0.4, 0, 1.4 + 0.4 * S(t * 3));
+    shR.rotation.set(-0.4, 0, -1.4 - 0.4 * S(t * 3 + 1));
+    elL.rotation.set(-0.5, 0, 0);
+    elR.rotation.set(-0.5, 0, 0);
+    squat(0.18 + bounce * 0.25, 0.14);
+  }
   if (r.cape) {
     // the cape flutters with the groove and flies out on jumps and spins
     const fly = p.style === 10 || p.style === 12 ? 0.9 : 0;
@@ -957,5 +1008,10 @@ export function poseRig(r: Rig, p: PoseInput) {
     shR.rotation.z = shR.rotation.z * (1 - c) + -0.35 * c;
     elR.rotation.x = elR.rotation.x * (1 - c) + -0.3 * c;
     elR.rotation.y *= 1 - c;
+  }
+  // real joints only bend one way: no elbows or knees folding backwards
+  for (const i of [0, 1] as const) {
+    r.elbow[i].rotation.x = Math.min(r.elbow[i].rotation.x, 0);
+    r.knee[i].rotation.x = Math.max(r.knee[i].rotation.x, 0);
   }
 }

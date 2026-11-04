@@ -1,0 +1,354 @@
+"use client";
+
+// Extra stage dressing around the DJ booth: a lighting truss with moving-head spots,
+// an LED stage skirt, chasing edge lights, and two go-go podiums with dancers.
+// Everything here lives in the booth's local space (stage centre at the origin, top at y = 0.5).
+
+import { useMemo, useRef } from "react";
+import { useFrame } from "@react-three/fiber";
+import * as THREE from "three";
+import { mergeGeometries } from "three/examples/jsm/utils/BufferGeometryUtils.js";
+import { pulse } from "./pulse";
+import { beamMaterial } from "./Lasers";
+import { createRig, dressRig, FLASHMOB_DANCES, GOGO_DANCES, poseRig, type Look } from "./chibi";
+import { useClub } from "@/lib/store";
+import { useStageTag } from "./labels";
+
+const TRUSS_X = 3.7;
+const TRUSS_Z = 1.0;
+const TRUSS_TOP = 5.0;
+
+// ---------------------------------------------------------------------------
+// Truss
+// ---------------------------------------------------------------------------
+
+/** A square box-truss segment of length `len` along +y: four rails plus zig-zag braces. */
+function trussGeometry(len: number, w = 0.26) {
+  const parts: THREE.BufferGeometry[] = [];
+  const h = w / 2;
+  for (const [x, z] of [[h, h], [-h, h], [h, -h], [-h, -h]]) {
+    const rail = new THREE.CylinderGeometry(0.022, 0.022, len, 6);
+    rail.translate(x, len / 2, z);
+    parts.push(rail);
+  }
+  const steps = Math.max(2, Math.round(len / w));
+  const seg = len / steps;
+  const brace = Math.hypot(w, seg);
+  const ang = Math.atan2(w, seg);
+  for (let i = 0; i < steps; i++) {
+    const y = i * seg + seg / 2;
+    const flip = i % 2 ? 1 : -1;
+    for (const face of [0, 1, 2, 3]) {
+      const b = new THREE.CylinderGeometry(0.012, 0.012, brace, 4);
+      b.rotateZ(ang * flip);
+      // put the brace on one of the four faces
+      if (face === 0) b.translate(0, y, h);
+      if (face === 1) b.translate(0, y, -h);
+      if (face === 2) {
+        b.rotateY(Math.PI / 2);
+        b.translate(h, y, 0);
+      }
+      if (face === 3) {
+        b.rotateY(Math.PI / 2);
+        b.translate(-h, y, 0);
+      }
+      parts.push(b);
+    }
+  }
+  return mergeGeometries(parts.map((p) => p.toNonIndexed()));
+}
+
+const trussMat = new THREE.MeshStandardMaterial({ color: "#b8bcc8", metalness: 0.9, roughness: 0.3 });
+
+function Truss() {
+  const geo = useMemo(() => {
+    const tower = trussGeometry(TRUSS_TOP);
+    const top = trussGeometry(TRUSS_X * 2);
+    const side = trussGeometry(2.6);
+    return { tower, top, side };
+  }, []);
+  return (
+    <group>
+      {[-TRUSS_X, TRUSS_X].map((x) => (
+        <group key={x}>
+          <mesh geometry={geo.tower} material={trussMat} position={[x, 0, TRUSS_Z]} />
+          {/* base plate */}
+          <mesh position={[x, 0.03, TRUSS_Z]} material={trussMat}>
+            <boxGeometry args={[0.6, 0.06, 0.6]} />
+          </mesh>
+          {/* side beam running back over the stage */}
+          <mesh geometry={geo.side} material={trussMat} position={[x, TRUSS_TOP, TRUSS_Z]} rotation-x={-Math.PI / 2} />
+        </group>
+      ))}
+      {/* front beam across the top */}
+      <mesh geometry={geo.top} material={trussMat} position={[-TRUSS_X, TRUSS_TOP, TRUSS_Z]} rotation-z={-Math.PI / 2} />
+    </group>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Moving-head spots hanging from the front beam
+// ---------------------------------------------------------------------------
+const HEAD_XS = [-3.0, -1.8, -0.6, 0.6, 1.8, 3.0];
+const BEAM_LEN = 9;
+
+function MovingHeads() {
+  const heads = useRef<THREE.Group[]>([]);
+  const beams = useRef<THREE.Mesh[]>([]);
+  const lenses = useRef<THREE.MeshBasicMaterial[]>([]);
+  const { beamGeo, mats } = useMemo(() => {
+    const g = new THREE.CylinderGeometry(0.07, 0.75, BEAM_LEN, 20, 1, true);
+    g.translate(0, -BEAM_LEN / 2, 0);
+    return { beamGeo: g, mats: HEAD_XS.map(() => beamMaterial(0.32)) };
+  }, []);
+
+  useFrame(() => {
+    const t = pulse.time;
+    const dropping = pulse.drop > 0.15;
+    const strobe = dropping ? (Math.floor(t * 14) % 2 ? 1 : 0.1) : 1;
+    const mode = Math.floor(pulse.beat / 8) % 3;
+    heads.current.forEach((h, i) => {
+      if (!h) return;
+      const side = i < HEAD_XS.length / 2 ? -1 : 1;
+      // pan/tilt patterns: fan sweep, crossing, then all pointing at the dance floor centre
+      if (mode === 0) {
+        h.rotation.set(-(0.55 + Math.sin(t * 1.2 + i) * 0.35), 0, Math.sin(t * 0.9 + i * 0.6) * 0.6);
+      } else if (mode === 1) {
+        h.rotation.set(-0.7, 0, side * (0.3 + Math.sin(t * 1.6) * 0.5));
+      } else {
+        h.rotation.set(-(0.85 + Math.sin(t * 3 + i) * 0.12), 0, HEAD_XS[i] * 0.1 + Math.sin(t * 2) * 0.15);
+      }
+    });
+    mats.forEach((m, i) => {
+      const hue = dropping ? (t * 0.6 + i * 0.1) % 1 : (t * 0.05 + i * 0.12) % 1;
+      m.color.setHSL(hue, dropping ? 0.3 : 1, 0.6);
+      m.opacity = (0.18 + pulse.kick * 0.35 + pulse.hype * 0.12) * strobe;
+      const lens = lenses.current[i];
+      if (lens) lens.color.copy(m.color).multiplyScalar(1.5 * strobe);
+    });
+  });
+
+  return (
+    <group>
+      {HEAD_XS.map((x, i) => (
+        <group key={x} position={[x, TRUSS_TOP - 0.2, TRUSS_Z]}>
+          {/* clamp + yoke */}
+          <mesh position={[0, 0.08, 0]} material={trussMat}>
+            <boxGeometry args={[0.1, 0.12, 0.1]} />
+          </mesh>
+          <mesh position={[0, -0.05, 0]}>
+            <boxGeometry args={[0.36, 0.06, 0.18]} />
+            <meshStandardMaterial color="#1a1a22" metalness={0.6} roughness={0.4} />
+          </mesh>
+          <group ref={(g) => { if (g) heads.current[i] = g; }} position={[0, -0.22, 0]}>
+            <mesh>
+              <cylinderGeometry args={[0.13, 0.11, 0.3, 16]} />
+              <meshStandardMaterial color="#202028" metalness={0.6} roughness={0.35} />
+            </mesh>
+            <mesh position={[0, -0.152, 0]} rotation-x={Math.PI / 2}>
+              <circleGeometry args={[0.1, 18]} />
+              <meshBasicMaterial ref={(m) => { if (m) lenses.current[i] = m; }} toneMapped={false} side={THREE.DoubleSide} />
+            </mesh>
+            <mesh ref={(m) => { if (m) beams.current[i] = m; }} geometry={beamGeo} material={mats[i]} position={[0, -0.15, 0]} raycast={() => null} />
+          </group>
+        </group>
+      ))}
+    </group>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// LED stage skirt + chasing edge lights
+// ---------------------------------------------------------------------------
+const skirtFragment = /* glsl */ `
+uniform float uTime; uniform float uKick;
+varying vec2 vUv;
+vec3 hsl(float h){ return clamp(abs(mod(h*6.0+vec3(0.,4.,2.),6.)-3.)-1.,0.,1.); }
+void main(){
+  vec2 grid = vec2(120.0, 10.0);
+  vec2 f = fract(vUv * grid);
+  float x = floor(vUv.x * grid.x) / grid.x;
+  float wave = 0.5 + 0.5 * sin(x * 30.0 - uTime * 6.0);
+  float lit = step(1.0 - wave * (0.6 + uKick), vUv.y + 0.2);
+  vec3 col = hsl(fract(x * 0.8 - uTime * 0.12)) * lit;
+  float dot = smoothstep(0.5, 0.3, length(f - 0.5));
+  gl_FragColor = vec4(col * dot, 1.0);
+}
+`;
+
+function StageSkirt() {
+  const uniforms = useMemo(() => ({ uTime: { value: 0 }, uKick: { value: 0 } }), []);
+  useFrame(() => {
+    uniforms.uTime.value = pulse.time;
+    uniforms.uKick.value = pulse.kick;
+  });
+  return (
+    <mesh position={[0, 0.24, 1.502]}>
+      <planeGeometry args={[6, 0.42]} />
+      <shaderMaterial
+        uniforms={uniforms}
+        toneMapped={false}
+        vertexShader="varying vec2 vUv; void main(){ vUv=uv; gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.0); }"
+        fragmentShader={skirtFragment}
+      />
+    </mesh>
+  );
+}
+
+const EDGE_N = 28;
+const tmpO = new THREE.Object3D();
+const tmpC = new THREE.Color();
+
+/** Round lamps along the front and sides of the stage top, chasing on the beat. */
+function EdgeLights() {
+  const ref = useRef<THREE.InstancedMesh>(null);
+  const spots = useMemo(() => {
+    const s: [number, number][] = [];
+    for (let i = 0; i < 16; i++) s.push([-2.9 + (i / 15) * 5.8, 1.42]);
+    for (let i = 0; i < 6; i++) s.push([-2.92, 1.2 - i * 0.5], [2.92, 1.2 - i * 0.5]);
+    return s.slice(0, EDGE_N);
+  }, []);
+  useFrame(() => {
+    const m = ref.current;
+    if (!m) return;
+    const step = Math.floor((pulse.beat + pulse.phase) * 4);
+    spots.forEach(([x, z], i) => {
+      if (m.userData.init !== true) {
+        tmpO.position.set(x, 0.505, z);
+        tmpO.updateMatrix();
+        m.setMatrixAt(i, tmpO.matrix);
+      }
+      const on = (i + step) % 4 === 0 || pulse.drop > 0.3;
+      tmpC.setHSL((pulse.time * 0.1 + i * 0.03) % 1, 1, on ? 0.6 : 0.12);
+      m.setColorAt(i, tmpC);
+    });
+    m.userData.init = true;
+    m.instanceMatrix.needsUpdate = true;
+    if (m.instanceColor) m.instanceColor.needsUpdate = true;
+  });
+  return (
+    <instancedMesh ref={ref} args={[undefined, undefined, EDGE_N]} raycast={() => null}>
+      <cylinderGeometry args={[0.05, 0.05, 0.02, 12]} />
+      <meshBasicMaterial toneMapped={false} />
+    </instancedMesh>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Go-go dancers on podiums
+// ---------------------------------------------------------------------------
+const DANCER_BASE = { eye: "#16121c", white: "#ffffff", blush: "#ff9db2", dark: "#141418", gold: "#f5c542", visor: "#7df9ff" };
+
+const DANCERS: { x: number; name: string; look: Look; light: string }[] = [
+  {
+    x: -4.4,
+    name: "NHUNG NHÚN NHẢY",
+    light: "#ff2bd6",
+    look: {
+      gender: "f",
+      hair: "pony",
+      top: "bikini",
+      bottom: "bikini",
+      boots: true,
+      glasses: false,
+      shades: true,
+      bow: false,
+      blush: true,
+      chain: true,
+      hat: "none",
+      palette: { ...DANCER_BASE, skin: "#f6d2b4", hair: "#eceaf2", outfit: "#ff2bd6", accent: "#ffffff", pants: "#1a1a1f", shoe: "#ffffff" },
+    },
+  },
+  {
+    x: 4.4,
+    name: "LAN LẢ LƯỚT",
+    light: "#00e5ff",
+    look: {
+      gender: "f",
+      hair: "long",
+      top: "bikini",
+      bottom: "bikini",
+      boots: true,
+      glasses: false,
+      shades: false,
+      bow: false,
+      blush: true,
+      chain: false,
+      hat: "catEars",
+      palette: { ...DANCER_BASE, skin: "#eec09a", hair: "#1d1a1f", outfit: "#00e5ff", accent: "#1c1c20", pants: "#1a1a1f", shoe: "#ff2bd6" },
+    },
+  },
+];
+
+const PODIUM_H = 1.0;
+
+function GogoPodium({ x, name, look, light, seed }: { x: number; name: string; look: Look; light: string; seed: number }) {
+  const rig = useMemo(() => {
+    const r = createRig(look);
+    dressRig(r, look.palette);
+    return r;
+  }, [look]);
+  const ring = useRef<THREE.MeshBasicMaterial>(null);
+  const dancer = useRef<THREE.Group>(null);
+  useStageTag(dancer, name, light);
+  const band = useRef<THREE.MeshBasicMaterial>(null);
+  const spotMat = useMemo(() => {
+    const m = beamMaterial(0.3);
+    m.color.set(light);
+    return m;
+  }, [light]);
+  const spotGeo = useMemo(() => {
+    const g = new THREE.CylinderGeometry(0.08, 0.75, 4.2, 20, 1, true);
+    g.translate(0, -2.1, 0);
+    return g;
+  }, []);
+
+  useFrame(() => {
+    const dropping = pulse.drop > 0.2;
+    const flashmob = FLASHMOB_DANCES[Math.floor(useClub.getState().dropAt) % FLASHMOB_DANCES.length];
+    const style = dropping ? flashmob : GOGO_DANCES[Math.floor(pulse.beat / 8) % GOGO_DANCES.length];
+    poseRig(rig, { time: pulse.time, phase: pulse.phase, beat: pulse.beat, energy: 0.85, style, seed });
+    const k = 0.45 + pulse.kick * 0.4;
+    if (ring.current) ring.current.color.set(light).multiplyScalar(k + 0.3);
+    if (band.current) band.current.color.setHSL((pulse.time * 0.15 + seed) % 1, 1, 0.3 + pulse.kick * 0.3);
+    spotMat.opacity = 0.16 + pulse.kick * 0.25;
+  });
+
+  return (
+    <group position={[x, 0, 1.4]}>
+      {/* podium */}
+      <mesh position={[0, PODIUM_H / 2, 0]}>
+        <cylinderGeometry args={[0.55, 0.62, PODIUM_H, 32]} />
+        <meshStandardMaterial color="#14101c" metalness={0.7} roughness={0.3} />
+      </mesh>
+      <mesh position={[0, PODIUM_H * 0.55, 0]}>
+        <cylinderGeometry args={[0.6, 0.6, 0.06, 32, 1, true]} />
+        <meshBasicMaterial ref={band} toneMapped={false} side={THREE.DoubleSide} />
+      </mesh>
+      <mesh position={[0, PODIUM_H + 0.005, 0]} rotation-x={-Math.PI / 2}>
+        <ringGeometry args={[0.46, 0.56, 40]} />
+        <meshBasicMaterial ref={ring} toneMapped={false} />
+      </mesh>
+      {/* dancer, turned slightly toward the room */}
+      <group ref={dancer} position={[0, PODIUM_H, 0]} rotation-y={-Math.sign(x) * 0.35}>
+        <primitive object={rig.root} />
+      </group>
+      {/* overhead spot on the dancer */}
+      <mesh geometry={spotGeo} material={spotMat} position={[0, PODIUM_H + 4.3, 0]} raycast={() => null} />
+    </group>
+  );
+}
+
+export function StageExtras() {
+  return (
+    <group>
+      <Truss />
+      <MovingHeads />
+      <StageSkirt />
+      <EdgeLights />
+      {DANCERS.map((d, i) => (
+        <GogoPodium key={d.x} x={d.x} name={d.name} look={d.look} light={d.light} seed={i * 0.5} />
+      ))}
+    </group>
+  );
+}

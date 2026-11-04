@@ -5,11 +5,12 @@
 
 import { useEffect, useMemo, useRef } from "react";
 import { useFrame } from "@react-three/fiber";
-import { Text } from "@react-three/drei";
 import * as THREE from "three";
 import { pulse } from "./pulse";
-import { createRig, dressRig, poseRig, FACE, FIGURE_HEIGHT, FLASHMOB_DANCES, HEAD_SIZE, type Look, type Rig } from "./chibi";
+import { createRig, dressRig, poseRig, FACE, FLASHMOB_DANCES, HEAD_SIZE, type Look, type Rig } from "./chibi";
 import { useClub } from "@/lib/store";
+import { StageExtras } from "./StageExtras";
+import { useStageTag } from "./labels";
 
 const DESK_TOP = 1.5;
 const DESK_W = 4.6;
@@ -33,7 +34,7 @@ const PALETTE_BASE = { eye: "#16121c", white: "#ffffff", blush: "#ff9db2", dark:
 /** Two DJs on the decks and an MC hyping the crowd in the middle. */
 const CREW: CrewMember[] = [
   {
-    name: "DJ MÕ",
+    name: "DJ ĐẠT ĐẬP ĐĨA",
     role: "dj",
     x: -1.55,
     seed: 0.05,
@@ -50,7 +51,7 @@ const CREW: CrewMember[] = [
     },
   },
   {
-    name: "MC CHUÔNG",
+    name: "MC MINH MÁU MÊ",
     role: "mc",
     x: 0,
     seed: 0.1,
@@ -69,7 +70,7 @@ const CREW: CrewMember[] = [
     },
   },
   {
-    name: "DJ TRỐNG",
+    name: "DJ TRANG TƯNG TỬNG",
     role: "dj",
     x: 1.55,
     seed: 0.0,
@@ -93,6 +94,9 @@ function Performer({ member }: { member: CrewMember }) {
     dressRig(r, member.look.palette);
     return r;
   }, [member]);
+
+  const group = useRef<THREE.Group>(null);
+  useStageTag(group, member.name, member.gear);
 
   useFrame(() => {
     const dropping = pulse.drop > 0.2;
@@ -124,12 +128,9 @@ function Performer({ member }: { member: CrewMember }) {
   });
 
   return (
-    <group position={[member.x, 0.8, -0.3]}>
+    <group ref={group} position={[member.x, 0.8, -0.3]}>
       <primitive object={rig.root} />
       {member.role === "dj" ? <Headphones rig={rig} color={member.gear} /> : <Mic rig={rig} color={member.gear} />}
-      <Text position={[0, FIGURE_HEIGHT + 0.28, 0.1]} fontSize={0.22} color={member.gear} anchorX="center" outlineWidth={0.035} outlineColor="#000">
-        {member.name}
-      </Text>
     </group>
   );
 }
@@ -597,6 +598,7 @@ export function DJBooth() {
       <Monitors />
       <Co2Jets />
       <SparkFountains />
+      <StageExtras />
       {/* riser so the big chibi heads clear the desk */}
       <mesh position={[0, 0.65, -0.3]}>
         <boxGeometry args={[4.4, 0.3, 0.8]} />

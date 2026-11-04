@@ -26,7 +26,7 @@ const COUNT = EMITTERS.length * BEAMS_PER_EMITTER;
 export const LASER_MODES = ["Quạt quét", "Đường hầm", "Cắt kéo", "Đuổi nhịp", "Bắn ngang"] as const;
 
 /** Basic additive material whose alpha fades along the beam (bright at the emitter). */
-function beamMaterial(strength: number) {
+export function beamMaterial(strength: number) {
   const m = new THREE.MeshBasicMaterial({
     transparent: true,
     blending: THREE.AdditiveBlending,

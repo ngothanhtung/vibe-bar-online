@@ -144,6 +144,20 @@ body {
   font-weight: 700;
   color: #fff;
 }
+.nametag.npc {
+  padding: 1px 7px;
+  border-width: 1px;
+  background: rgba(0, 0, 0, 0.45);
+  font-size: 11px;
+  font-weight: 600;
+  opacity: 0.85;
+}
+.nametag.stage {
+  background: rgba(0, 0, 0, 0.75);
+  font-size: 12px;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
 .nametag.me {
   background: rgba(255, 43, 214, 0.35);
   font-size: 15px;

@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { AVATAR_COLORS } from "@/lib/content";
+import { AVATAR_COLORS, FEMALE_NAMES, MALE_NAMES, randomTrendName } from "@/lib/content";
 
 const NAME_KEY = "quaybar:name";
 const COLOR_KEY = "quaybar:color";
@@ -65,15 +65,25 @@ export default function EntryGate({ onEnter }: { onEnter: (name: string, color: 
         <label className="mt-6 block text-xs uppercase tracking-widest opacity-70" htmlFor="nick">
           Nickname dân chơi
         </label>
-        <input
-          id="nick"
-          autoFocus
-          value={name}
-          onChange={(e) => setName(e.target.value)}
-          maxLength={24}
-          placeholder="VD: Tùng Tùng Chát"
-          className="mt-1 w-full rounded-xl border border-white/15 bg-white/5 px-4 py-3 outline-none focus:border-fuchsia-400"
-        />
+        <div className="mt-1 flex gap-2">
+          <input
+            id="nick"
+            autoFocus
+            value={name}
+            onChange={(e) => setName(e.target.value)}
+            maxLength={24}
+            placeholder="VD: Tư Tí Tửng, Tuấn Tiền Tỉ…"
+            className="min-w-0 flex-1 rounded-xl border border-white/15 bg-white/5 px-4 py-3 outline-none focus:border-fuchsia-400"
+          />
+          <button
+            type="button"
+            onClick={() => setName(randomTrendName(gender))}
+            className="shrink-0 rounded-xl border border-white/15 bg-white/5 px-3 text-sm hover:border-fuchsia-400"
+            title="Gợi ý một tên vần điệu hợp với giới tính đã chọn"
+          >
+            🎲 Gợi ý
+          </button>
+        </div>
 
         <div className="mt-4 text-xs uppercase tracking-widest opacity-70">Nhân vật</div>
         <div className="mt-2 grid grid-cols-2 gap-2" role="radiogroup" aria-label="Giới tính nhân vật">
@@ -88,7 +98,12 @@ export default function EntryGate({ onEnter }: { onEnter: (name: string, color: 
               key={g}
               role="radio"
               aria-checked={gender === g}
-              onClick={() => setGender(g)}
+              onClick={() => {
+                setGender(g);
+                // a suggested name of the other gender gets swapped for a fitting one
+                const other = g === "m" ? FEMALE_NAMES : MALE_NAMES;
+                if (other.includes(name)) setName(randomTrendName(g));
+              }}
               className={`rounded-xl border px-3 py-2 text-sm transition ${gender === g ? "border-fuchsia-400 bg-fuchsia-500/25" : "border-white/15 bg-white/5 opacity-70"}`}
             >
               {label}

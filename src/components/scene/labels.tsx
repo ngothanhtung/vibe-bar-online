@@ -7,6 +7,7 @@
 import { useEffect, useRef } from "react";
 import { useFrame, useThree } from "@react-three/fiber";
 import * as THREE from "three";
+import { FIGURE_HEIGHT } from "./chibi";
 
 export interface Label {
   el: HTMLDivElement;
@@ -76,4 +77,20 @@ export function LabelLayer() {
   });
 
   return null;
+}
+
+/** Crisp DOM name tag floating above a performer (same style as the players' tags). */
+export function useStageTag(group: { current: THREE.Object3D | null }, name: string, color: string, height = FIGURE_HEIGHT + 0.3) {
+  useEffect(() => {
+    const label = addLabel("nametag stage", (out) => {
+      if (!group.current) return false;
+      group.current.getWorldPosition(out);
+      out.y += height;
+      return true;
+    });
+    label.el.textContent = name;
+    label.el.style.borderColor = color;
+    label.el.style.color = color;
+    return () => removeLabel(label);
+  }, [group, name, color, height]);
 }

@@ -34,7 +34,51 @@ export const DRUNK_LINES = [
   "Ai đó gọi xe giùm bạn này!",
 ];
 
-export const BOT_NAMES = ["Anh Ba Quẩy", "Chị Bảy Bay", "Dân Chơi Hệ Lắc", "Út Nhảy Sung", "Mõ Làng Bar", "Cô Tư Cụng Ly"];
+/**
+ * Rhyming / alliterative nicknames in the Vietnamese meme style ("Tư Tí Tửng", "Tuấn Tiền Tỉ"…):
+ * a given name followed by two words that start with the same sound. Split by gender so a
+ * character's name fits who they are.
+ */
+export const MALE_NAMES = [
+  "Tư Tí Tửng", "Tuấn Tiền Tỉ", "Hưng Héo Hon", "Việt Vu Vơ", "Bảo Bá Báy", "Long Lầy Lội", "Nam Nhây Nhớt",
+  "Hùng Hớn Hở", "Quân Quẩy Quá", "Đạt Đô Đô", "Sơn Say Sưa", "Huy Hú Hét", "Kiên Kều Kều", "Duy Dzô Dzô",
+  "Giang Gồng Gánh", "Khoa Khè Khè", "Phúc Phê Pha", "Tâm Tăng Tốc", "Dũng Dập Dìu", "Thắng Thất Thểu",
+  "Bình Bay Bổng", "Tú Tíu Tít", "Khánh Khéo Khoe", "Sang Sành Sỏi", "Tín Tỉnh Táo", "Hải Hăng Hái",
+  "Đông Đứng Đắn", "Lộc Lắc Lư", "Phát Phởn Phơ", "Tùng Tưng Bừng", "Toàn Táo Tợn", "Minh Mộng Mơ",
+  "Cường Chịu Chơi", "Hiếu Hí Hửng",
+];
+export const FEMALE_NAMES = [
+  "Lan Lả Lướt", "Phương Phiêu Phiêu", "Thảo Thả Thính", "Trang Tưng Tửng", "Mai Mê Mẩn", "Ngọc Ngơ Ngác",
+  "Linh Lung Linh", "Vy Vui Vẻ", "Yến Yểu Điệu", "Hoa Hấp Háy", "Chi Chanh Chua", "Nhung Nhún Nhảy",
+  "Loan Lắc Lư", "Quỳnh Quay Quắt", "Mỹ Mê Mải", "Trâm Trầm Trồ", "Hạnh Hóng Hớt", "Nga Ngả Nghiêng",
+  "Thu Thướt Tha", "Hằng Hớn Hở", "Diệu Dịu Dàng", "Xuân Xinh Xắn", "Kim Kiêu Kỳ", "Tuyết Tung Tăng",
+];
+export const TREND_NAMES = [...MALE_NAMES, ...FEMALE_NAMES];
+
+/** Names already taken by the people on stage. */
+export const STAGE_NAMES = ["Trang Tưng Tửng", "Nhung Nhún Nhảy", "Lan Lả Lướt"];
+
+type G = "m" | "f";
+const poolFor = (g: G) => (g === "m" ? MALE_NAMES : FEMALE_NAMES).filter((n) => !STAGE_NAMES.includes(n));
+const shuffle = <T,>(a: T[]) => [...a].sort(() => Math.random() - 0.5);
+
+/** Hands out names for one gender at a time without repeats until the pool runs out. */
+export function nameDealer() {
+  const pools: Record<G, string[]> = { m: [], f: [] };
+  return (g: G) => {
+    if (pools[g].length === 0) pools[g] = shuffle(poolFor(g));
+    return pools[g].pop()!;
+  };
+}
+
+/** Six demo bots, alternating boy / girl (index 0 is a boy), each with a fitting name. */
+const dealBot = nameDealer();
+export const BOT_NAMES = Array.from({ length: 6 }, (_, i) => dealBot(i % 2 === 0 ? "m" : "f"));
+
+export const randomTrendName = (g?: G) => {
+  const pool = g ? poolFor(g) : TREND_NAMES;
+  return pool[Math.floor(Math.random() * pool.length)];
+};
 
 export const BOT_SHOUTS = [
   "DJ ơi lên nhạc đi!!!",
