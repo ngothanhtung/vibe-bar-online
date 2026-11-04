@@ -7,6 +7,7 @@ export const pulse = {
   mid: 0,
   high: 0,
   phase: 0,
+  beat: 0, // running beat counter, +1 every time phase wraps
   hype: 0.2, // 0..1
   drop: 0, // 1 right after a DROP, decays to 0
 };

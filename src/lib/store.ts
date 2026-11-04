@@ -12,6 +12,7 @@ export interface Patron {
   bot?: boolean;
   look?: number; // outfit seed (see makeLook)
   gender?: "m" | "f";
+  dance?: number; // chosen dance index, -1 = auto
 }
 
 export interface Shout {
@@ -49,10 +50,12 @@ export interface YtTrack {
 
 interface ClubState {
   joined: boolean;
-  me: { id: string; name: string; color: string; look: number; gender: "m" | "f" };
+  me: { id: string; name: string; color: string; look: number; gender: "m" | "f"; dance: number };
   myPos: { x: number; z: number };
   genre: Genre;
   muted: boolean;
+  camFocus: "floor" | "stage";
+  pixelArt: boolean; // low-res pixel-art render // camera preset; the user can still orbit freely afterwards
   yt: YtTrack | null; // when set, a YouTube track replaces the built-in DJ
   bpm: number; // beat clock tempo used for visuals while YouTube plays
   hype: number; // 0..100 "độ phê"
@@ -75,10 +78,12 @@ const uid = () => Math.random().toString(36).slice(2, 10);
 
 export const useClub = create<ClubState>((set, get) => ({
   joined: false,
-  me: { id: "local-" + uid(), name: "", color: "#ff2bd6", look: Math.floor(Math.random() * 2 ** 31), gender: Math.random() < 0.5 ? "m" : "f" },
+  me: { id: "local-" + uid(), name: "", color: "#ff2bd6", look: Math.floor(Math.random() * 2 ** 31), gender: Math.random() < 0.5 ? "m" : "f", dance: -1 },
   myPos: { x: (Math.random() - 0.5) * 6, z: 1 + Math.random() * 2 },
   genre: "vinahouse",
   muted: false,
+  camFocus: "floor",
+  pixelArt: false,
   yt: null,
   bpm: 124,
   hype: 20,

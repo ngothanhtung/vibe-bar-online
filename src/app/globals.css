@@ -96,6 +96,22 @@ body {
   box-shadow: 0 0 18px rgba(255, 43, 214, 0.5);
 }
 .action-btn:active { transform: scale(0.9) rotate(-3deg); }
+.dance-chip {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.1rem;
+  border-radius: 12px;
+  padding: 0.4rem 0.25rem;
+  font-size: 11px;
+  line-height: 1.15;
+  text-align: center;
+  background: rgba(255, 255, 255, 0.06);
+  transition: background 0.15s, transform 0.08s;
+}
+.dance-chip:hover { background: rgba(255, 255, 255, 0.14); }
+.dance-chip:active { transform: scale(0.94); }
+
 .action-gold:hover {
   border-color: #ffc94a;
   box-shadow: 0 0 18px rgba(255, 201, 74, 0.6);

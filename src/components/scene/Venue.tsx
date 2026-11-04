@@ -1,12 +1,11 @@
 "use client";
 
-import { useEffect, useMemo, useRef } from "react";
+import { useMemo, useRef } from "react";
 import { useFrame, type ThreeEvent } from "@react-three/fiber";
 import { Sparkles, Text } from "@react-three/drei";
 import * as THREE from "three";
 import { pulse } from "./pulse";
 import { useClub } from "@/lib/store";
-import { createRig, dressRig, poseRig, type Look, type Rig } from "./chibi";
 
 export const FLOOR = { cols: 14, rows: 10, size: 1, x0: -7, z0: -2.5 };
 
@@ -157,103 +156,6 @@ export function LedScreen() {
 }
 
 /** DJ booth with an animated robo-DJ. */
-export function DJBooth() {
-  const rig = useMemo(() => {
-    const look: Look = {
-      gender: "m",
-      hair: "short",
-      top: "hoodie",
-      bottom: "pants",
-      glasses: false,
-      bow: false,
-      blush: false,
-      palette: { skin: "#f6d2b4", hair: "#1d1a1f", eye: "#16121a", blush: "#ff8fa8", outfit: "#1b1b24", accent: "#ff2bd6", pants: "#1a1a1f", shoe: "#ff2bd6", dark: "#141418" },
-    };
-    const r = createRig(look);
-    dressRig(r, look.palette);
-    return r;
-  }, []);
-  const strip = useRef<THREE.MeshBasicMaterial>(null);
-  const decks = useRef<THREE.Mesh[]>([]);
-  useFrame((_, dt) => {
-    poseRig(rig, { time: pulse.time, phase: pulse.phase, energy: 0.7 + pulse.drop * 0.3, style: pulse.drop > 0.2 ? 2 : 0, seed: 0.3 });
-    if (pulse.drop <= 0.2) {
-      // left hand rides the deck, scratching
-      rig.shoulder[0].rotation.set(-0.85, 0, 0.15);
-      rig.elbow[0].rotation.set(-0.7, Math.sin(pulse.time * 9) * 0.35, 0);
-    }
-    if (strip.current) strip.current.color.setHSL((pulse.time * 0.1) % 1, 1, 0.35 + pulse.kick * 0.3);
-    decks.current.forEach((d) => d && (d.rotation.y += dt * 4));
-  });
-  return (
-    <group position={[0, 0, -5]}>
-      {/* stage */}
-      <mesh position={[0, 0.25, 0]}>
-        <boxGeometry args={[6, 0.5, 3]} />
-        <meshStandardMaterial color="#120a1c" metalness={0.5} roughness={0.4} />
-      </mesh>
-      {/* desk */}
-      <mesh position={[0, 1.0, 0.6]}>
-        <boxGeometry args={[3.2, 1, 0.9]} />
-        <meshStandardMaterial color="#1a1026" metalness={0.6} roughness={0.3} />
-      </mesh>
-      <mesh position={[0, 1.0, 1.06]}>
-        <boxGeometry args={[3.2, 0.12, 0.02]} />
-        <meshBasicMaterial ref={strip} toneMapped={false} />
-      </mesh>
-      {[-0.8, 0.8].map((x, i) => (
-        <mesh key={x} position={[x, 1.53, 0.6]} ref={(m) => { if (m) decks.current[i] = m; }}>
-          <cylinderGeometry args={[0.32, 0.32, 0.04, 24]} />
-          <meshStandardMaterial color="#222" metalness={0.8} roughness={0.2} />
-        </mesh>
-      ))}
-      {/* DJ: a chibi on a riser so the big head clears the desk */}
-      <mesh position={[0, 0.65, -0.3]}>
-        <boxGeometry args={[1.2, 0.3, 0.8]} />
-        <meshStandardMaterial color="#120a1c" />
-      </mesh>
-      <group position={[0, 0.8, -0.3]}>
-        <primitive object={rig.root} />
-      </group>
-      <DjHeadphones rig={rig} />
-      <Text position={[0, 2.75, -0.3]} fontSize={0.28} color="#00e5ff" anchorX="center" outlineWidth={0.015} outlineColor="#000">
-        DJ MÕ AI
-      </Text>
-    </group>
-  );
-}
-
-/** Headphones + shades parented to the DJ's head joint. */
-function DjHeadphones({ rig }: { rig: Rig }) {
-  const gear = useMemo(() => {
-    const g = new THREE.Group();
-    const band = new THREE.Mesh(
-      new THREE.TorusGeometry(0.32, 0.03, 8, 24, Math.PI),
-      new THREE.MeshBasicMaterial({ color: "#ff2bd6", toneMapped: false }),
-    );
-    band.position.set(0, 0.3, 0);
-    band.rotation.y = Math.PI / 2;
-    g.add(band);
-    for (const side of [1, -1]) {
-      const cup = new THREE.Mesh(new THREE.CylinderGeometry(0.1, 0.1, 0.06, 16), new THREE.MeshBasicMaterial({ color: "#ff2bd6", toneMapped: false }));
-      cup.rotation.z = Math.PI / 2;
-      cup.position.set(0.31 * side, 0.27, 0);
-      g.add(cup);
-    }
-    const shades = new THREE.Mesh(new THREE.BoxGeometry(0.36, 0.07, 0.03), new THREE.MeshBasicMaterial({ color: "#00e5ff", toneMapped: false }));
-    shades.position.set(0, 0.27, 0.28);
-    g.add(shades);
-    return g;
-  }, []);
-  useEffect(() => {
-    rig.head.add(gear);
-    return () => {
-      rig.head.remove(gear);
-    };
-  }, [rig, gear]);
-  return null;
-}
-
 function Speaker({ x }: { x: number }) {
   const cones = useRef<THREE.Mesh[]>([]);
   useFrame(() => {
@@ -341,61 +243,6 @@ export function DiscoBall() {
         <meshStandardMaterial color="#e8e8ff" metalness={1} roughness={0.08} flatShading emissive="#6655aa" emissiveIntensity={0.4} />
       </mesh>
       <Sparkles count={260} scale={[22, 7, 18]} position={[0, -2.6, 0]} size={4} speed={0} color="#ffffff" opacity={0.7} />
-    </group>
-  );
-}
-
-const LASER_EMITTERS: [number, number, number][] = [
-  [-5.5, 6.8, -6],
-  [5.5, 6.8, -6],
-  [-2.5, 7.2, -7],
-  [2.5, 7.2, -7],
-];
-
-/** Sweeping laser fans that speed up with the hype meter. */
-export function Lasers() {
-  const groups = useRef<THREE.Group[]>([]);
-  const mats = useRef<THREE.MeshBasicMaterial[]>([]);
-  const genre = useClub((s) => s.genre);
-  useFrame(() => {
-    const t = pulse.time;
-    const speed = 0.8 + pulse.hype * 1.6;
-    groups.current.forEach((g, i) => {
-      if (!g) return;
-      g.rotation.x = 0.9 + Math.sin(t * speed + i) * 0.35;
-      g.rotation.y = Math.sin(t * speed * 0.7 + i * 1.7) * 0.7 * (i % 2 ? 1 : -1);
-    });
-    const on = genre === "chill" ? 0.12 : 0.15 + pulse.kick * 0.55 + pulse.drop * 0.4;
-    mats.current.forEach((m, i) => {
-      if (!m) return;
-      m.opacity = on;
-      m.color.setHSL(((t * 0.1 + i * 0.07) % 1 + (genre === "edm" ? 0.5 : 0)) % 1, 1, 0.55);
-    });
-  });
-  let k = 0;
-  return (
-    <group>
-      {LASER_EMITTERS.map((p, i) => (
-        <group key={i} position={p} ref={(g) => { if (g) groups.current[i] = g; }}>
-          {[-0.5, -0.25, 0, 0.25, 0.5].map((a) => {
-            const idx = k++;
-            return (
-              <group key={a} rotation-z={a}>
-                <mesh position={[0, -7, 0]}>
-                  <cylinderGeometry args={[0.012, 0.012, 14, 4]} />
-                  <meshBasicMaterial
-                    ref={(m) => { if (m) mats.current[idx] = m; }}
-                    transparent
-                    blending={THREE.AdditiveBlending}
-                    depthWrite={false}
-                    toneMapped={false}
-                  />
-                </mesh>
-              </group>
-            );
-          })}
-        </group>
-      ))}
     </group>
   );
 }

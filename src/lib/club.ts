@@ -20,6 +20,7 @@ import { engine } from "./audio";
 import { getFirebase } from "./firebase";
 import { ACTIONS, AVATAR_COLORS, BOT_NAMES, BOT_SHOUTS, randomOf, type ActionKind } from "./content";
 import { useClub, type Patron, type Shout, type Stats } from "./store";
+import { makeLook } from "@/components/scene/chibi";
 
 const PRESENCE_TTL = 45_000;
 const STAT_KEY: Partial<Record<ActionKind, keyof Stats>> = {
@@ -36,10 +37,23 @@ let pushPresence: (() => void) | null = null;
 
 const LOOK_KEY = "quaybar:look";
 
-/** New random outfit for me; others see it on the next presence write. */
-export function rerollLook() {
+/** Pick my dance (-1 = auto); everyone sees it on the next presence write. */
+export function setDance(dance: number) {
   const s = useClub.getState();
-  const look = Math.floor(Math.random() * 2 ** 31);
+  s.set({ me: { ...s.me, dance } });
+  pushPresence?.();
+}
+
+/**
+ * New random outfit for me; others see it on the next presence write.
+ * `hero` keeps rolling until it lands on one of the superhero costumes.
+ */
+export function rerollLook(kind: "any" | "hero" = "any") {
+  const s = useClub.getState();
+  let look = Math.floor(Math.random() * 2 ** 31);
+  if (kind === "hero") {
+    for (let i = 0; i < 500 && (makeLook(look, s.me.color, s.me.gender).costume ?? "none") === "none"; i++) look = Math.floor(Math.random() * 2 ** 31);
+  }
   s.set({ me: { ...s.me, look } });
   try {
     localStorage.setItem(LOOK_KEY, String(look));
@@ -168,6 +182,7 @@ function startFirebase(): () => void {
       color: s.me.color,
       look: s.me.look,
       gender: s.me.gender,
+      dance: s.me.dance,
       x: Math.round(s.myPos.x * 100) / 100,
       z: Math.round(s.myPos.z * 100) / 100,
       lastSeen: serverTimestamp(),
@@ -200,6 +215,7 @@ function startFirebase(): () => void {
             lastSeen: v.lastSeen?.toMillis?.() ?? Date.now(),
             look: typeof v.look === "number" ? v.look : undefined,
             gender: v.gender === "f" || v.gender === "m" ? v.gender : undefined,
+            dance: typeof v.dance === "number" ? v.dance : -1,
           };
         });
         refreshPatrons();
@@ -280,11 +296,16 @@ function startDemo(): () => void {
     bot: true,
     look: Math.floor(Math.random() * 2 ** 31),
     gender: (i % 2 === 0 ? "m" : "f") as "m" | "f",
+    dance: -1,
   }));
   useClub.getState().set({ patrons: bots, online: false });
 
   const wander = setInterval(() => {
-    const moved = useClub.getState().patrons.map((b) =>
+    const moved = useClub.getState().patrons.map((b) => ({
+      ...b,
+      // now and then a bot commits to one dance for a while, then goes back to auto
+      dance: Math.random() < 0.08 ? (Math.random() < 0.5 ? -1 : Math.floor(Math.random() * 16)) : b.dance,
+    })).map((b) =>
       Math.random() < 0.35
         ? { ...b, x: Math.max(-6, Math.min(6, b.x + (Math.random() - 0.5) * 3)), z: Math.max(-2, Math.min(6.5, b.z + (Math.random() - 0.5) * 3)) }
         : b,

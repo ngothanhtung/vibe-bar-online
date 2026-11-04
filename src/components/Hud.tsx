@@ -2,7 +2,8 @@
 
 import { useEffect, useState } from "react";
 import { engine, GENRES, type Genre } from "@/lib/audio";
-import { doAction, rerollLook, sendShout } from "@/lib/club";
+import { doAction, rerollLook, sendShout, setDance } from "@/lib/club";
+import { DANCES } from "./scene/chibi";
 import { ACTIONS, DRUNK_LINES, FORTUNES, randomOf, type ActionKind } from "@/lib/content";
 import { useClub } from "@/lib/store";
 import { ytAudio } from "@/lib/youtube";
@@ -23,9 +24,13 @@ function TopBar() {
           <span className={`h-2 w-2 rounded-full ${online ? "bg-lime-400 animate-pulse" : "bg-amber-400"}`} />
           {online ? `${fmt(count)} dân chơi đang online` : `Chế độ demo · ${count} bot đang quẩy`}
         </div>
-        <button className="chip ml-2 mt-1 bg-black/50 text-xs backdrop-blur" onClick={rerollLook} title="Random bộ đồ, kiểu tóc, phụ kiện mới">
+        <button className="chip ml-2 mt-1 bg-black/50 text-xs backdrop-blur" onClick={() => rerollLook()} title="Random bộ đồ, kiểu tóc, phụ kiện mới">
           🎲 Đổi đồ
         </button>
+        <button className="chip ml-1 mt-1 bg-black/50 text-xs backdrop-blur" onClick={() => rerollLook("hero")} title="Hóa thân siêu anh hùng: áo choàng, giáp, ninja">
+          🦸 Siêu anh hùng
+        </button>
+        <PixelToggle />
       </div>
       <div className="pointer-events-auto grid grid-cols-4 gap-1.5 text-xs sm:flex sm:gap-2 sm:text-sm">
         {[
@@ -46,9 +51,25 @@ function TopBar() {
   );
 }
 
+function PixelToggle() {
+  const pixelArt = useClub((s) => s.pixelArt);
+  const set = useClub((s) => s.set);
+  return (
+    <button
+      className={`chip ml-1 mt-1 text-xs backdrop-blur ${pixelArt ? "chip-on" : "bg-black/50"}`}
+      onClick={() => set({ pixelArt: !pixelArt })}
+      aria-pressed={pixelArt}
+      title="Bật/tắt đồ họa pixel art"
+    >
+      👾 Pixel
+    </button>
+  );
+}
+
 function DjPanel() {
   const genre = useClub((s) => s.genre);
   const muted = useClub((s) => s.muted);
+  const camFocus = useClub((s) => s.camFocus);
   const yt = useClub((s) => s.yt);
   const set = useClub((s) => s.set);
   const [linkOpen, setLinkOpen] = useState(false);
@@ -76,6 +97,13 @@ function DjPanel() {
           title="Dán link YouTube để phát nhạc"
         >
           <span className="text-red-500">▶</span> YouTube
+        </button>
+        <button
+          className={`chip ${camFocus === "stage" ? "chip-on" : ""}`}
+          onClick={() => set({ camFocus: camFocus === "stage" ? "floor" : "stage" })}
+          title="Đưa camera lên sát sân khấu DJ"
+        >
+          {camFocus === "stage" ? "🕺 Về sàn" : "🎧 Xem DJ"}
         </button>
         <button
           className="chip"
@@ -150,10 +178,44 @@ function FortuneModal({ onClose }: { onClose: () => void }) {
   );
 }
 
+/** Grid of every dance; the pick shows on your avatar and is synced to everyone. */
+function DancePicker({ onClose }: { onClose: () => void }) {
+  const dance = useClub((s) => s.me.dance);
+  const choose = (d: number) => {
+    setDance(d);
+    onClose();
+  };
+  return (
+    <div className="glass pointer-events-auto w-full max-w-xl p-2">
+      <div className="mb-1.5 flex items-center justify-between px-1 text-xs">
+        <span className="opacity-70">Chọn điệu nhảy · DROP thì cả bar đồng diễn</span>
+        <button className="chip" onClick={onClose} aria-label="Đóng">
+          ✕
+        </button>
+      </div>
+      <div className="grid grid-cols-3 gap-1.5 sm:grid-cols-6">
+        <button onClick={() => choose(-1)} className={`dance-chip ${dance < 0 ? "chip-on" : ""}`}>
+          <span className="text-xl">🎲</span>
+          <span>Tự động</span>
+        </button>
+        {DANCES.map((d, i) => (
+          <button key={d.name} onClick={() => choose(i)} className={`dance-chip ${dance === i ? "chip-on" : ""}`}>
+            <span className="text-xl">{d.emoji}</span>
+            <span>{d.name}</span>
+          </button>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 function ActionBar({ onFortune }: { onFortune: () => void }) {
   const [text, setText] = useState("");
+  const [dancesOpen, setDancesOpen] = useState(false);
+  const dance = useClub((s) => s.me.dance);
   return (
     <div className="pointer-events-none fixed inset-x-0 bottom-0 z-20 flex flex-col items-center gap-2 p-3 sm:p-4">
+      {dancesOpen && <DancePicker onClose={() => setDancesOpen(false)} />}
       <DjPanel />
       <div className="pointer-events-auto flex max-w-full gap-1.5 overflow-x-auto pb-1">
         {ORDER.map((k) => (
@@ -162,6 +224,10 @@ function ActionBar({ onFortune }: { onFortune: () => void }) {
             <span className="text-[10px] sm:text-xs">{ACTIONS[k].label}</span>
           </button>
         ))}
+        <button className="action-btn" onClick={() => setDancesOpen((o) => !o)} aria-expanded={dancesOpen} title="Chọn điệu nhảy">
+          <span className="text-2xl sm:text-3xl">{dance >= 0 ? DANCES[dance].emoji : "💃"}</span>
+          <span className="text-[10px] sm:text-xs">Điệu nhảy</span>
+        </button>
         <button className="action-btn action-gold" onClick={onFortune}>
           <span className="text-2xl sm:text-3xl">🔮</span>
           <span className="text-[10px] sm:text-xs">Xin quẻ</span>

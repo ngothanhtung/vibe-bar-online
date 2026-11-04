@@ -8,10 +8,13 @@ import * as THREE from "three";
 import { engine } from "@/lib/audio";
 import { useClub } from "@/lib/store";
 import { pulse } from "./pulse";
-import { BarCounter, DanceFloor, DiscoBall, DJBooth, Lasers, LedScreen, MovingLights, Room, Speakers } from "./Venue";
+import { BarCounter, DanceFloor, DiscoBall, LedScreen, MovingLights, Room, Speakers } from "./Venue";
+import { Lasers } from "./Lasers";
+import { DJBooth } from "./DjBooth";
 import { Crowd, Patrons, useMovement } from "./People";
 import { ConfettiLayer, FloatingFxLayer } from "./Effects";
 import { LabelLayer } from "./labels";
+import { usePixelCanvas } from "./pixel";
 
 /** Samples the audio engine once per frame into the shared `pulse` object. */
 function AudioPulse() {
@@ -23,7 +26,9 @@ function AudioPulse() {
     pulse.bass = lv.bass;
     pulse.mid = lv.mid;
     pulse.high = lv.high;
-    pulse.phase = engine.beatPhase();
+    const phase = engine.beatPhase();
+    if (phase < pulse.phase - 0.5) pulse.beat++;
+    pulse.phase = phase;
     pulse.hype += (s.hype / 100 - pulse.hype) * Math.min(1, dt * 2);
     pulse.drop = Math.max(0, 1 - (performance.now() - s.dropAt) / 3500);
   });
@@ -78,6 +83,31 @@ function ResponsiveCamera() {
   return null;
 }
 
+const CAM_PRESETS = {
+  floor: { pos: new THREE.Vector3(0, 4.2, 11.5), target: new THREE.Vector3(0, 1.4, 0) },
+  stage: { pos: new THREE.Vector3(0.6, 2.9, -0.4), target: new THREE.Vector3(0, 1.8, -4.8) },
+};
+
+/** Glides the camera to the chosen preset, then hands control back to OrbitControls. */
+function CameraFocus() {
+  const focus = useClub((s) => s.camFocus);
+  const controls = useThree((s) => s.controls) as unknown as { target: THREE.Vector3; update: () => void } | null;
+  const camera = useThree((s) => s.camera);
+  const until = useRef(0);
+  useEffect(() => {
+    until.current = performance.now() + 1400;
+  }, [focus]);
+  useFrame((_, dt) => {
+    if (!controls || performance.now() > until.current) return;
+    const p = CAM_PRESETS[focus];
+    const k = 1 - Math.exp(-dt * 4);
+    camera.position.lerp(p.pos, k);
+    controls.target.lerp(p.target, k);
+    controls.update();
+  });
+  return null;
+}
+
 function SceneContent() {
   const walkTo = useMovement();
   return (
@@ -102,10 +132,12 @@ function SceneContent() {
         <FloatingFxLayer />
         <ConfettiLayer />
       </World>
+      <CameraFocus />
       <OrbitControls
+        makeDefault
         target={[0, 1.4, 0]}
         enablePan={false}
-        minDistance={4}
+        minDistance={2.5}
         maxDistance={16}
         minPolarAngle={0.6}
         maxPolarAngle={1.45}
@@ -117,12 +149,14 @@ function SceneContent() {
 }
 
 export default function ClubScene() {
+  const pixelArt = useClub((s) => s.pixelArt);
+  const pixel = usePixelCanvas(pixelArt);
   return (
     <Canvas
-      dpr={[1, 1.75]}
+      dpr={pixel.dpr}
       camera={{ position: [0, 4.2, 11.5], fov: 55 }}
       gl={{ antialias: false, powerPreference: "high-performance" }}
-      style={{ position: "fixed", inset: 0 }}
+      style={{ position: "fixed", inset: 0, ...pixel.style }}
     >
       <SceneContent />
     </Canvas>

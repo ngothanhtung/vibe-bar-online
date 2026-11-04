@@ -2,7 +2,7 @@
 
 > Đi chùa online thì có rồi… giờ tới lượt **quẩy bar online**.
 
-Một club 3D chạy trên trình duyệt: sàn LED nhảy theo nhạc, DJ robot, laser, quả cầu disco, và cả nước cùng quẩy realtime.
+Một club 3D chạy trên trình duyệt: sàn LED nhảy theo nhạc, sân khấu có 3 người (DJ Mõ, MC Chuông, DJ Trống), laser, quả cầu disco, và cả nước cùng quẩy realtime.
 
 **Stack:** Next.js 16 (App Router) · three.js qua `@react-three/fiber` + `drei` + postprocessing · Firebase (Anonymous Auth + Firestore) · Web Audio API · Tailwind v4 · zustand
 
@@ -15,7 +15,10 @@ Một club 3D chạy trên trình duyệt: sàn LED nhảy theo nhạc, DJ robot
 | Xin xăm | 🔮 **Xin quẻ đêm nay** (14 quẻ, có cả quẻ "Hạ Hạ") |
 | Cầu an | 🚕 Nhắc "Đã uống rượu bia thì không lái xe" khi bạn say |
 
-- **Nhân vật chibi đa dạng:** đầu tròn to, người nhỏ, tay chân ngắn. Có nam và nữ (chọn ở màn hình vào bar). Mỗi người có kiểu tóc riêng (ngắn, trọc, dài, búi, đuôi ngựa, nón lưỡi trai), áo (thun, tay dài, ba lỗ, hoodie, váy liền), quần hoặc váy (quần dài, quần short, chân váy), có thể đeo kính, nơ, má hồng, với nhiều màu da, tóc và giày. Áo theo màu bạn chọn. Bấm **🎲 Đổi đồ** để random bộ khác. Cả bộ đồ được gói thành một số `look` và đồng bộ qua Firebase, nên người khác thấy đúng bộ bạn mặc. Mỗi người có 4 kiểu nhảy: đấm tay, dang tay, giơ hai tay, chống cằm chill.
+- **Nhân vật kiểu đồ chơi tối giản:** đầu tròn to với tóc bát úp, hai mắt chấm đen và miệng cười; thân hình trụ, tay chân dạng ống tròn, giày khối bo góc; màu mờ phẳng, không viền. Áo vest có sơ mi trắng và nơ cổ, váy liền xòe chuông. Nút **👾 Pixel** để chuyển sang render pixel art (mặc định tắt). Có nam và nữ (chọn ở màn hình vào bar), nhiều kiểu tóc (bát úp, dựng gai, trọc, dài, búi, đuôi ngựa, nón lưỡi trai), áo (thun, tay dài, ba lỗ, hoodie, váy liền), quần hoặc váy, kính, nơ. Có đồ dân chơi: kính đen, dây chuyền vàng, sơ mi hoa, áo khoác mở, nón bucket, snapback đội ngược, băng đô, tai mèo. Khoảng 1/5 số người mặc **trang phục siêu anh hùng** nguyên bản (không dùng thiết kế của Marvel/DC): áo choàng có ngôi sao và mặt nạ, bộ giáp có kính visor phát sáng, hoặc ninja. Áo choàng bay theo điệu nhảy. Áo theo màu bạn chọn; bấm **🎲 Đổi đồ** để random bộ khác, hoặc **🦸 Siêu anh hùng** để random một bộ siêu anh hùng. Cả bộ đồ được gói thành một số `look` và đồng bộ qua Firebase. Mở **`/lineup`** để xem 16 nhân vật nhảy đủ 16 điệu dưới ánh sáng rõ.
+- **16 điệu nhảy:** đấm tay, dang tay lắc lư, giơ tay, chill chống cằm, Shuffle, Floss, Dab, Bay lắc (lắc đầu, xoay cổ tay), Cưỡi ngựa (có quăng dây), Con gà, Xoay vòng, Robot, Bật nhảy (có nhảy dang chân tay), Headbang và guitar tưởng tượng, Sóng tay, Ngồi đá chân. Đám đông tự đổi điệu mỗi 8 đến 16 nhịp; bật Lofi thì chỉ nhảy điệu chậm. Khi **DROP** cả bar, kể cả người chơi và dàn DJ, cùng nhảy chung một điệu. Bấm **💃 Điệu nhảy** để chọn điệu cho mình; điệu bạn chọn được đồng bộ để người khác thấy.
+- **Laser hoành tráng:** dàn 12 đầu laser (8 đầu trên giàn phía sau và 4 đầu trên hai tường bên) bắn 96 tia. Mỗi tia có lõi sáng và quầng mờ như xuyên qua khói. Cứ 16 nhịp lại đổi màn, xoay vòng 5 màn: quạt quét, đường hầm xoay, cắt kéo, đuổi nhịp và bắn ngang qua đầu khán giả; màn bắn ngang có thêm một lớp sóng laser (liquid sky) gợn trên đầu đám đông. Khi DROP thì laser chuyển trắng cầu vồng và nháy strobe.
+- **Sân khấu chi tiết:** 2 DJ, mỗi người có 2 máy CDJ (vòng jog phát sáng, màn sóng nhạc, nút play nháy theo nhịp) và một mixer (núm EQ, fader tự chạy, đèn VU nhảy theo bass). MC cầm mic, có laptop logo neon. Mặt trước bàn là panel LED chấm bi chạy theo nhạc; hai bên có ống đèn LED và loa kiểm âm. Khi DROP có cột khói CO2 và pháo lạnh phun tia vàng. Nút **🎧 Xem DJ** đưa camera lên sát sân khấu.
 - **Nhạc tự tổng hợp** bằng Web Audio, không cần file mp3 nên không dính bản quyền: Vinahouse 138 BPM, EDM Bigroom 128, Lofi Chill 84. Visual bám đúng từng nhịp kick đã lên lịch.
 - **Phát nhạc từ YouTube:** bấm **▶ YouTube** trong thanh DJ rồi dán link (`youtube.com/watch?v=…`, `youtu.be/…`, `/shorts/…`, `music.youtube.com`). Chỉ phát tiếng, video được giấu trong khung 1px. Trình duyệt không cho đọc âm thanh từ YouTube, nên đèn và sàn chạy theo một đồng hồ nhịp: chỉnh BPM bằng −/+ hoặc bấm **👆 Tap nhịp** theo bài 4 lần để đèn bắt đúng nhịp. Video nào chủ kênh chặn nhúng thì sẽ báo lỗi.
 - **Độ phê:** mỗi hành động của bạn (và một phần của người khác) làm đầy thanh. Đầy 100% thì **DROP!!!**: chớp sáng, kèn hơi, laser và đám đông nhảy mạnh lên.
@@ -51,7 +54,7 @@ Mở http://localhost:3000. Không có file `.env.local` thì app chạy ở ch�
 
 | Path | Nội dung |
 |---|---|
-| `presence/{uid}` | `name, color, look, gender, x, z, lastSeen`: ai đang ở trong bar và đứng ở đâu. Heartbeat 15s; ai im quá 45s thì bị ẩn. |
+| `presence/{uid}` | `name, color, look, gender, dance, x, z, lastSeen`: ai đang ở trong bar và đứng ở đâu. Heartbeat 15s; ai im quá 45s thì bị ẩn. |
 | `shouts/{id}` | `uid, name, color, text, kind: chat\|action, action?, createdAt`: chat và các hành động. Chỉ được thêm, không sửa. |
 | `stats/global` | `dzo, drinks, quay, confetti`: bộ đếm toàn cầu, rules chỉ cho tăng +1 mỗi lần. |
 
@@ -63,14 +66,18 @@ Mở http://localhost:3000. Không có file `.env.local` thì app chạy ở ch�
 src/
   app/                    layout, page, globals.css
   components/
+    Lineup.tsx            trang /lineup: 16 chibi nhảy 16 điệu
     ClubApp.tsx           ghép gate + scene + HUD, chỉ chạy phía client
     EntryGate.tsx         nhập nickname, chọn màu, check 18+
     Hud.tsx               action bar, chat, feed, độ phê, xin quẻ, overlay DROP
     scene/
       ClubScene.tsx       Canvas, postprocessing, camera, độ lắc khi say
-      Venue.tsx           sàn LED, màn LED shader, DJ booth, loa, quầy bar, laser, disco ball
+      Venue.tsx           sàn LED, màn LED shader, loa, quầy bar, laser, disco ball
+      Lasers.tsx          giàn laser, 5 màn trình diễn, lớp sóng laser
+      DjBooth.tsx         sân khấu: CDJ, mixer, laptop, panel LED, CO2, pháo lạnh, 3 người biểu diễn
       People.tsx          đám đông NPC (instanced), avatar người chơi, di chuyển
-      chibi.ts            rig nhân vật chibi, bảng màu trang phục, các điệu nhảy
+      chibi.ts            rig nhân vật kiểu đồ chơi, trang phục, các điệu nhảy
+      pixel.tsx           render độ phân giải thấp cho pixel art
       labels.tsx          tên và emoji gắn vào vị trí 3D (DOM thuần)
       Effects.tsx         emoji bay lên, pháo giấy
       pulse.ts            số liệu audio dùng chung cho từng frame
