@@ -37,7 +37,7 @@ const PALETTE_BASE = { eye: "#16121c", white: "#ffffff", blush: "#ff9db2", dark:
 /** Two DJs on the decks and an MC hyping the crowd in the middle. */
 const CREW: CrewMember[] = [
   {
-    name: "DJ ĐẠT ĐÚ ĐỞN",
+    name: "DJ TRUNG TRƠ TRẼN",
     role: "dj",
     x: -1.55,
     seed: 0.05,
@@ -54,7 +54,7 @@ const CREW: CrewMember[] = [
     },
   },
   {
-    name: "MC MINH MÀU MÈ",
+    name: "MC HUẤN HÍ HỬNG",
     role: "mc",
     x: 0,
     seed: 0.1,
@@ -73,7 +73,7 @@ const CREW: CrewMember[] = [
     },
   },
   {
-    name: "DJ TRÚC TRƠ TRẼN",
+    name: "DJ SƠN XẤC XƯỢC",
     role: "dj",
     x: 1.55,
     seed: 0.0,
