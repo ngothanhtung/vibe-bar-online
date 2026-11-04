@@ -7,6 +7,7 @@ import { useEffect, useMemo, useRef } from "react";
 import { useFrame } from "@react-three/fiber";
 import * as THREE from "three";
 import { pulse } from "./pulse";
+import { SPECTRUM_GLSL, spectrumTexture } from "./spectrum";
 import { createRig, dressRig, poseRig, FACE, FLASHMOB_DANCES, HEAD_SIZE, type Look, type Rig } from "./chibi";
 import { useClub } from "@/lib/store";
 import { StageExtras } from "./StageExtras";
@@ -382,21 +383,23 @@ function Laptop({ x }: { x: number }) {
 }
 
 const panelFragment = /* glsl */ `
-uniform float uTime; uniform float uKick; uniform float uBass;
+uniform float uTime; uniform float uKick;
+${SPECTRUM_GLSL}
 varying vec2 vUv;
 vec3 hsl(float h){ return clamp(abs(mod(h*6.0+vec3(0.,4.,2.),6.)-3.)-1.,0.,1.); }
 void main(){
   vec2 grid = vec2(92.0, 18.0);
   vec2 cell = floor(vUv * grid);
   vec2 f = fract(vUv * grid);
-  float x = cell.x / grid.x;
-  // mirrored spectrum bars from the center
-  float d = abs(x - 0.5) * 2.0;
-  float h = (0.25 + 0.6 * abs(sin(d * 9.0 - uTime * 3.0)) * (0.4 + uBass)) * (1.0 - d * 0.4) + uKick * 0.25;
-  float bar = step(abs(cell.y / grid.y - 0.5) * 2.0, h);
-  // chevrons racing outward
-  float chev = step(0.8, fract(d * 4.0 - uTime * 1.5 + abs(vUv.y - 0.5)));
-  vec3 col = hsl(fract(d * 0.4 + uTime * 0.07)) * bar + hsl(fract(0.55 + uTime * 0.05)) * chev * 0.35 * (1.0 - bar);
+  // mirrored left/right and up/down from the centre line: bass in the middle
+  float d = abs((cell.x + 0.5) / grid.x - 0.5) * 2.0;
+  float level = specLevel(d);
+  float peak = specPeak(d);
+  float y = abs((cell.y + 0.5) / grid.y - 0.5) * 2.0;
+  float bar = step(y, level);
+  float cap = step(abs(y - peak), 1.0 / grid.y) * step(0.05, peak);
+  vec3 col = hsl(fract(d * 0.45 + uTime * 0.07)) * bar + vec3(1.0) * cap * 0.9;
+  col += vec3(0.05, 0.03, 0.08) * (1.0 - bar) * (1.0 + uKick * 2.0);
   float dot = smoothstep(0.5, 0.35, length(f - 0.5));
   gl_FragColor = vec4(col * dot * 1.2, 1.0);
 }
@@ -404,11 +407,10 @@ void main(){
 
 /** LED front of the booth. */
 function BoothPanel() {
-  const uniforms = useMemo(() => ({ uTime: { value: 0 }, uKick: { value: 0 }, uBass: { value: 0 } }), []);
+  const uniforms = useMemo(() => ({ uTime: { value: 0 }, uKick: { value: 0 }, uSpec: { value: spectrumTexture } }), []);
   useFrame(() => {
     uniforms.uTime.value = pulse.time;
     uniforms.uKick.value = pulse.kick;
-    uniforms.uBass.value = pulse.bass;
   });
   return (
     <mesh position={[0, 1.0, 1.051]}>

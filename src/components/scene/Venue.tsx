@@ -5,6 +5,7 @@ import { useFrame, type ThreeEvent } from "@react-three/fiber";
 import { Sparkles, Text } from "@react-three/drei";
 import * as THREE from "three";
 import { pulse } from "./pulse";
+import { SPECTRUM_GLSL, spectrumTexture } from "./spectrum";
 import { useClub } from "@/lib/store";
 
 export const FLOOR = { cols: 14, rows: 10, size: 1, x0: -7, z0: -2.5 };
@@ -112,19 +113,30 @@ varying vec2 vUv;
 void main() { vUv = uv; gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0); }
 `;
 const screenFragment = /* glsl */ `
-uniform float uTime; uniform float uKick; uniform float uBass;
+uniform float uTime; uniform float uKick; uniform float uMode;
+${SPECTRUM_GLSL}
 varying vec2 vUv;
 vec3 hsl(float h){ return clamp(abs(mod(h*6.0+vec3(0.,4.,2.),6.)-3.)-1.,0.,1.); }
 void main(){
-  vec2 uv = vUv * vec2(3.0, 1.0);
-  vec2 cell = floor(uv * vec2(48.0, 16.0)) / vec2(48.0, 16.0);
-  float bars = step(cell.y, 0.12 + 0.75 * abs(sin(cell.x * 7.0 + uTime * 2.0)) * (0.35 + uBass));
-  float ring = sin(length(cell - vec2(1.5, 0.5)) * 14.0 - uTime * 6.0);
-  vec3 col = hsl(fract(cell.x * 0.2 + uTime * 0.08)) * bars * 0.9;
-  col += hsl(fract(0.6 + uTime * 0.05)) * smoothstep(0.7, 1.0, ring) * (0.25 + uKick);
-  vec2 g = fract(uv * vec2(48.0, 16.0));
-  col *= step(0.12, g.x) * step(0.12, g.y);
-  gl_FragColor = vec4(col * 0.75, 1.0);
+  // 96 x 24 LED matrix showing a mirrored spectrum analyser: bass in the middle, treble at the edges
+  vec2 grid = vec2(96.0, 24.0);
+  vec2 cell = floor(vUv * grid);
+  vec2 f = fract(vUv * grid);
+  float band = abs((cell.x + 0.5) / grid.x - 0.5) * 2.0;
+  float level = specLevel(band);
+  float peak = specPeak(band);
+  float row = (cell.y + 0.5) / grid.y;
+  float lit = step(row, level * 0.96);
+  float cap = step(abs(row - peak * 0.96 - 0.5 / grid.y), 0.5 / grid.y) * step(0.03, peak);
+  // colour modes swap every 16 beats: classic green-yellow-red meter, or a rainbow sweep
+  vec3 meter = mix(vec3(0.1, 1.0, 0.35), vec3(1.0, 0.9, 0.1), smoothstep(0.35, 0.65, row));
+  meter = mix(meter, vec3(1.0, 0.15, 0.25), smoothstep(0.7, 0.9, row));
+  vec3 rainbow = hsl(fract(band * 0.7 - uTime * 0.12 + row * 0.15));
+  vec3 col = mix(meter, rainbow, uMode) * lit + vec3(1.0) * cap;
+  // dim "unlit" LEDs and a faint flash on the kick
+  col += vec3(0.05, 0.03, 0.08) * (1.0 - lit) * (1.0 + uKick * 2.0);
+  float dot = smoothstep(0.5, 0.36, length(f - 0.5));
+  gl_FragColor = vec4(col * dot * 0.95, 1.0);
 }
 `;
 
@@ -132,11 +144,12 @@ void main(){
 export function LedScreen() {
   const mat = useRef<THREE.ShaderMaterial>(null);
   const latest = useClub((s) => s.shouts.find((x) => x.kind === "chat"));
-  const uniforms = useMemo(() => ({ uTime: { value: 0 }, uKick: { value: 0 }, uBass: { value: 0 } }), []);
-  useFrame(() => {
+  const uniforms = useMemo(() => ({ uTime: { value: 0 }, uKick: { value: 0 }, uMode: { value: 0 }, uSpec: { value: spectrumTexture } }), []);
+  useFrame((_, dt) => {
     uniforms.uTime.value = pulse.time;
     uniforms.uKick.value = pulse.kick;
-    uniforms.uBass.value = pulse.bass;
+    const wantRainbow = Math.floor(pulse.beat / 16) % 2;
+    uniforms.uMode.value += (wantRainbow - uniforms.uMode.value) * Math.min(1, dt * 2);
   });
   const shout = latest ? `${latest.name}: ${latest.text}` : "Chào mừng tới Quẩy Bar Online!";
   return (

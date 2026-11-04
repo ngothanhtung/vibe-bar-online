@@ -112,8 +112,11 @@ class BeatEngine {
     this.master.gain.value = 0.8;
     this.musicBus = ctx.createGain();
     this.analyser = ctx.createAnalyser();
-    this.analyser.fftSize = 256;
-    this.analyser.smoothingTimeConstant = 0.75;
+    // 2048-point FFT: ~23 Hz per bin, enough resolution for a log-spaced EQ down in the bass
+    this.analyser.fftSize = 2048;
+    this.analyser.smoothingTimeConstant = 0.55;
+    this.analyser.minDecibels = -90;
+    this.analyser.maxDecibels = -22;
     this.freqData = new Uint8Array(new ArrayBuffer(this.analyser.frequencyBinCount));
 
     this.musicBus.connect(comp);
@@ -370,6 +373,42 @@ class BeatEngine {
     return (this.ctx.currentTime / spb) % 1;
   }
 
+  /**
+   * Fill `out` (0..1 per band) with a log-spaced spectrum, 40 Hz → 16 kHz, like a hardware EQ.
+   * While YouTube plays (cross-origin, can't be analysed) it synthesises a believable one
+   * from the beat clock instead.
+   */
+  spectrum(out: Float32Array) {
+    const n = out.length;
+    if (this.external || !this.ctx || !this.playing) {
+      const k = this.kickEnvelope();
+      const t = performance.now() / 1000;
+      for (let i = 0; i < n; i++) {
+        const u = i / (n - 1);
+        const tilt = 0.85 - u * 0.45; // more energy in the lows
+        const wob = 0.5 + 0.5 * Math.sin(t * (2.3 + i * 0.37) + i * 1.7) * Math.sin(t * (1.1 + i * 0.13));
+        const punch = u < 0.25 ? k * (1 - u * 3) : k * 0.25;
+        out[i] = Math.min(1, tilt * (0.25 + 0.45 * wob) + punch * 0.6);
+      }
+      return;
+    }
+    this.analyser.getByteFrequencyData(this.freqData);
+    const d = this.freqData;
+    const binHz = this.ctx.sampleRate / this.analyser.fftSize;
+    const lo = 40;
+    const hi = 16000;
+    for (let i = 0; i < n; i++) {
+      const f0 = lo * Math.pow(hi / lo, i / n);
+      const f1 = lo * Math.pow(hi / lo, (i + 1) / n);
+      const b0 = Math.max(1, Math.floor(f0 / binHz));
+      const b1 = Math.max(b0 + 1, Math.ceil(f1 / binHz));
+      let peak = 0;
+      for (let b = b0; b < b1 && b < d.length; b++) peak = Math.max(peak, d[b]);
+      // gentle treble boost so the top end isn't always flat
+      out[i] = Math.min(1, (peak / 255) * (1 + (i / n) * 0.35));
+    }
+  }
+
   levels() {
     if (this.external) {
       // Cross-origin YouTube audio can't be analysed, so fake levels from the beat clock.
@@ -385,7 +424,7 @@ class BeatEngine {
       for (let i = a; i < b; i++) s += d[i];
       return s / (b - a) / 255;
     };
-    return { bass: avg(1, 6), mid: avg(6, 40), high: avg(40, 110) };
+    return { bass: avg(2, 7), mid: avg(7, 80), high: avg(80, 400) };
   }
 }
 

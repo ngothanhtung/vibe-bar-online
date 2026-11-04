@@ -8,6 +8,7 @@ import * as THREE from "three";
 import { engine } from "@/lib/audio";
 import { useClub } from "@/lib/store";
 import { pulse } from "./pulse";
+import { updateSpectrum } from "./spectrum";
 import { BarCounter, DanceFloor, DiscoBall, LedScreen, MovingLights, Room, Speakers } from "./Venue";
 import { Lasers } from "./Lasers";
 import { DJBooth } from "./DjBooth";
@@ -31,6 +32,7 @@ function AudioPulse() {
     pulse.phase = phase;
     pulse.hype += (s.hype / 100 - pulse.hype) * Math.min(1, dt * 2);
     pulse.drop = Math.max(0, 1 - (performance.now() - s.dropAt) / 3500);
+    updateSpectrum(dt);
   });
   return null;
 }
