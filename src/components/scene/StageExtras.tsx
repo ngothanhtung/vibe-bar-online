@@ -241,12 +241,13 @@ function EdgeLights() {
 const DANCER_BASE = { eye: "#16121c", white: "#ffffff", blush: "#ff9db2", dark: "#141418", gold: "#f5c542", visor: "#7df9ff" };
 
 /** Male dancers on the outer podiums: shirtless, long pants, short spiky hair. */
-function maleDancer(x: number, z: number, name: string, skin: string, hairColor: string, pants: string, shoe: string, light: string, extras: Partial<Look> = {}) {
+function maleDancer(x: number, z: number, name: string, skin: string, hairColor: string, pants: string, shoe: string, light: string, extras: Partial<Look> = {}, figureScale = 1) {
   return {
     x,
     z,
     name,
     light,
+    figureScale,
     look: {
       gender: "m" as const,
       hair: "spiky" as const,
@@ -289,7 +290,7 @@ function jeansDancer(x: number, z: number, name: string, skin: string, hairColor
   };
 }
 
-const DANCERS: { x: number; z?: number; name: string; look: Look; light: string }[] = [
+const DANCERS: { x: number; z?: number; name: string; look: Look; light: string; figureScale?: number }[] = [
   {
     x: -4.4,
     z: 0.8,
@@ -308,7 +309,7 @@ const DANCERS: { x: number; z?: number; name: string; look: Look; light: string 
       blush: true,
       chain: true,
       hat: "none",
-      palette: { ...DANCER_BASE, skin: "#f6d2b4", hair: "#eceaf2", outfit: "#ff2bd6", accent: "#ffffff", pants: "#1a1a1f", shoe: "#ffffff" },
+      palette: { ...DANCER_BASE, skin: "#f6d2b4", hair: "#1d1a1f", outfit: "#ff2bd6", accent: "#ffffff", pants: "#1a1a1f", shoe: "#ffffff" },
     },
   },
   {
@@ -334,20 +335,20 @@ const DANCERS: { x: number; z?: number; name: string; look: Look; light: string 
   },
   // two more on each side, on podiums further out
   jeansDancer(-5.8, 0.1, "HƯƠNG HÓNG HỚT", "#fde3cc", "#1d1a1f", "#ff3b5c", "#3d5f94", "#ff3b5c"),
-  maleDancer(-7.2, 0.8, "CƯỜNG CAY CÚ", "#f2c9a5", "#2a211c", "#34507e", "#f5f5f0", "#7cff4f", { chain: true }),
-  jeansDancer(5.8, 0.1, "LINH LÍ LẮC", "#f6d2b4", "#3b2618", "#ffffff", "#25324f", "#00e5ff"),
-  maleDancer(7.2, 0.8, "BÌNH BU BÁM", "#e6b48a", "#eceaf2", "#f0ede6", "#1c1c20", "#a66bff"),
+  maleDancer(-7.2, 0.8, "CƯỜNG CAY CÚ", "#f2c9a5", "#2a211c", "#34507e", "#f5f5f0", "#7cff4f", { chain: true }, 0.88),
+  jeansDancer(5.8, 0.1, "LINH LÍ LẮC", "#f6d2b4", "#1d1a1f", "#ffffff", "#25324f", "#00e5ff"),
+  maleDancer(7.2, 0.8, "BÌNH BU BÁM", "#e6b48a", "#eceaf2", "#f0ede6", "#1c1c20", "#a66bff", {}, 0.88),
 ];
 
 const BACK_ROW_DANCERS = [
-  maleDancer(-3.3, -1.5, "TUẤN TIỀN TỶ", "#f2c9a5", "#2a211c", "#34507e", "#f5f5f0", "#ff2bd6", { chain: true }),
-  maleDancer(-4.6, -1.5, "VŨ VƠ VÉT", "#e6b48a", "#1d1a1f", "#a33c5b", "#f5f5f0", "#ffe600"),
-  maleDancer(-5.9, -1.5, "TÙNG TÍ TỬNG", "#d9a37c", "#eceaf2", "#276a65", "#1c1c20", "#00e5ff", { chain: true }),
-  maleDancer(-7.2, -1.5, "NAM NÔ NỨC", "#6b3f2a", "#3b2618", "#6c4a91", "#f5f5f0", "#7cff4f"),
-  maleDancer(3.3, -1.5, "VIỆT VẶN VẸO", "#eec09a", "#1d1a1f", "#a33c5b", "#1c1c20", "#00e5ff"),
-  maleDancer(4.6, -1.5, "PHONG PHỦ PHÀNG", "#f6d2b4", "#2a211c", "#34507e", "#f5f5f0", "#a66bff", { chain: true }),
-  maleDancer(5.9, -1.5, "VINH VỘI VÃ", "#d9a37c", "#eceaf2", "#276a65", "#1c1c20", "#ff3b5c"),
-  maleDancer(7.2, -1.5, "SINH SUNG SỨC", "#e6b48a", "#3b2618", "#6c4a91", "#f5f5f0", "#ffe600", { chain: true }),
+  maleDancer(-3.3, -1.5, "TUẤN TIỀN TỶ", "#f2c9a5", "#2a211c", "#34507e", "#f5f5f0", "#ff2bd6", { top: "tank", chain: true }),
+  maleDancer(-4.6, -1.5, "VŨ VƠ VÉT", "#e6b48a", "#1d1a1f", "#a33c5b", "#f5f5f0", "#ffe600", { top: "tank" }),
+  maleDancer(-5.9, -1.5, "TÙNG TÍ TỬNG", "#d9a37c", "#eceaf2", "#276a65", "#1c1c20", "#00e5ff", { top: "tank", chain: true }),
+  maleDancer(-7.2, -1.5, "NAM NÔ NỨC", "#6b3f2a", "#3b2618", "#6c4a91", "#f5f5f0", "#7cff4f", { top: "tank" }),
+  maleDancer(3.3, -1.5, "VIỆT VẶN VẸO", "#eec09a", "#1d1a1f", "#a33c5b", "#1c1c20", "#00e5ff", { top: "tank" }),
+  maleDancer(4.6, -1.5, "PHONG PHỦ PHÀNG", "#f6d2b4", "#2a211c", "#34507e", "#f5f5f0", "#a66bff", { top: "tank", chain: true, glasses: true }),
+  maleDancer(5.9, -1.5, "VINH VỘI VÃ", "#d9a37c", "#eceaf2", "#276a65", "#1c1c20", "#ff3b5c", { top: "tank", glasses: true }),
+  maleDancer(7.2, -1.5, "SINH SUNG SỨC", "#e6b48a", "#3b2618", "#6c4a91", "#f5f5f0", "#ffe600", { top: "tank", chain: true, glasses: true }),
 ];
 
 const PODIUM_H = 0.6;
@@ -356,7 +357,7 @@ const STAGE_TOP = 0.5;
 const BACK_ROW_Z = -1.5;
 const BACK_ROW_PLATFORM_WIDTH = 5.5;
 
-function GogoPodium({ x, z = 1.4, name, look, light, seed }: { x: number; z?: number; name: string; look: Look; light: string; seed: number }) {
+function GogoPodium({ x, z = 1.4, name, look, light, seed, figureScale = 1 }: { x: number; z?: number; name: string; look: Look; light: string; seed: number; figureScale?: number }) {
   const rig = useMemo(() => {
     const r = createRig(look);
     return r;
@@ -387,9 +388,10 @@ function GogoPodium({ x, z = 1.4, name, look, light, seed }: { x: number; z?: nu
     const phrase = Math.floor(pulse.beat / 8);
     const style = dropping ? flashmob : GOGO_DANCES[(phrase + troupe * 3) % GOGO_DANCES.length];
     poseRig(rig, { time: pulse.time, phase: pulse.phase, beat: pulse.beat, energy: 0.85, style, seed: 0 });
-    const k = 0.45 + pulse.kick * 0.4;
-    if (ring.current) ring.current.color.set(light).multiplyScalar(k + 0.3);
-    if (band.current) band.current.color.setHSL((pulse.time * 0.15 + seed) % 1, 1, 0.3 + pulse.kick * 0.3);
+    const hue = (pulse.time * 0.08 + seed + Math.floor(pulse.beat / 2) * 0.12) % 1;
+    const brightness = Math.min(0.9, (pulse.phase < 0.18 ? 0.62 : 0.28) + pulse.kick * 0.2 + pulse.drop * 0.25);
+    if (ring.current) ring.current.color.setHSL((hue + 0.12) % 1, 1, brightness);
+    if (band.current) band.current.color.setHSL(hue, 1, brightness);
     spotMat.opacity = 0.16 + pulse.kick * 0.25;
   }, POSE_PRIORITY);
 
@@ -408,7 +410,7 @@ function GogoPodium({ x, z = 1.4, name, look, light, seed }: { x: number; z?: nu
         <meshBasicMaterial ref={ring} toneMapped={false} />
       </mesh>
       {/* dancer, turned slightly toward the room */}
-      <group ref={dancer} position={[0, PODIUM_H, 0]} rotation-y={-Math.sign(x) * 0.35}>
+      <group ref={dancer} position={[0, PODIUM_H, 0]} rotation-y={-Math.sign(x) * 0.35} scale={figureScale}>
         <primitive object={rig.root} />
       </group>
       {/* overhead spot on the dancer */}
@@ -420,6 +422,23 @@ function GogoPodium({ x, z = 1.4, name, look, light, seed }: { x: number; z?: nu
 function BackRowPlatform({ x, color }: { x: number; color: string }) {
   const width = BACK_ROW_PLATFORM_WIDTH;
   const depth = 1.5;
+  const ledMaterials = useRef<THREE.MeshBasicMaterial[]>([]);
+  const baseHue = useMemo(() => {
+    const hsl = { h: 0, s: 0, l: 0 };
+    new THREE.Color(color).getHSL(hsl);
+    return hsl.h;
+  }, [color]);
+
+  useFrame(() => {
+    const beatPulse = pulse.phase < 0.18 ? 0.62 : 0.28;
+    const brightness = Math.min(0.9, beatPulse + pulse.kick * 0.2 + pulse.drop * 0.25);
+    ledMaterials.current.forEach((material, i) => {
+      if (!material) return;
+      const hue = (baseHue + pulse.time * 0.08 + Math.floor(pulse.beat / 2) * 0.12 + i * 0.16) % 1;
+      material.color.setHSL(hue, 1, brightness);
+    });
+  }, POSE_PRIORITY);
+
   return (
     <group position={[x, STAGE_TOP, BACK_ROW_Z]}>
       <mesh position={[0, BACK_ROW_PODIUM_H / 2, 0]}>
@@ -432,11 +451,11 @@ function BackRowPlatform({ x, color }: { x: number; color: string }) {
       </mesh>
       <mesh position={[0, 0.38, depth / 2 + 0.02]}>
         <boxGeometry args={[width - 0.08, 0.08, 0.035]} />
-        <meshBasicMaterial color={color} toneMapped={false} />
+        <meshBasicMaterial ref={(material) => { if (material) ledMaterials.current[0] = material; }} color={color} toneMapped={false} />
       </mesh>
       <mesh position={[0, BACK_ROW_PODIUM_H + 0.055, depth / 2 - 0.04]}>
         <boxGeometry args={[width - 0.18, 0.035, 0.04]} />
-        <meshBasicMaterial color={color} toneMapped={false} />
+        <meshBasicMaterial ref={(material) => { if (material) ledMaterials.current[1] = material; }} color={color} toneMapped={false} />
       </mesh>
     </group>
   );
@@ -487,7 +506,7 @@ export function StageExtras() {
       <StageSkirt />
       <EdgeLights />
       {DANCERS.map((d, i) => (
-        <GogoPodium key={d.x} x={d.x} z={d.z} name={d.name} look={d.look} light={d.light} seed={i * 0.17} />
+        <GogoPodium key={d.x} x={d.x} z={d.z} name={d.name} look={d.look} light={d.light} seed={i * 0.17} figureScale={d.figureScale} />
       ))}
       <BackRowPlatform x={-5.25} color="#ff2bd6" />
       <BackRowPlatform x={5.25} color="#00e5ff" />
