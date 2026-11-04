@@ -1,0 +1,43 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    function signedIn() { return request.auth != null; }
+    function validName(n) { return n is string && n.size() > 0 && n.size() <= 24; }
+
+    // Who is in the bar right now + where they stand on the dance floor.
+    match /presence/{uid} {
+      allow read: if signedIn();
+      allow create, update: if signedIn() && request.auth.uid == uid
+        && validName(request.resource.data.name)
+        && request.resource.data.color is string && request.resource.data.color.size() <= 9
+        && request.resource.data.x is number && request.resource.data.z is number
+        && request.resource.data.lastSeen == request.time
+        && request.resource.data.keys().hasOnly(['name', 'color', 'x', 'z', 'lastSeen']);
+      allow delete: if signedIn() && request.auth.uid == uid;
+    }
+
+    // Chat shout-outs and action events (dzô, gọi bia, pháo giấy...). Append-only.
+    match /shouts/{id} {
+      allow read: if signedIn();
+      allow create: if signedIn()
+        && request.resource.data.uid == request.auth.uid
+        && validName(request.resource.data.name)
+        && request.resource.data.text is string && request.resource.data.text.size() <= 100
+        && request.resource.data.kind in ['chat', 'action']
+        && request.resource.data.createdAt == request.time
+        && request.resource.data.keys().hasOnly(['uid', 'name', 'color', 'text', 'kind', 'action', 'createdAt']);
+    }
+
+    // Global counters: only +1 increments on known keys.
+    match /stats/global {
+      allow read: if signedIn();
+      allow create: if signedIn()
+        && request.resource.data.keys().hasOnly(['dzo', 'drinks', 'quay', 'confetti']);
+      allow update: if signedIn()
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['dzo', 'drinks', 'quay', 'confetti'])
+        && request.resource.data.diff(resource.data).affectedKeys().size() == 1
+        && request.resource.data[request.resource.data.diff(resource.data).affectedKeys().toList()[0]]
+           == resource.data.get(request.resource.data.diff(resource.data).affectedKeys().toList()[0], 0) + 1;
+    }
+  }
+}
