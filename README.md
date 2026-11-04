@@ -15,7 +15,9 @@ Một club 3D chạy trên trình duyệt: sàn LED nhảy theo nhạc, DJ robot
 | Xin xăm | 🔮 **Xin quẻ đêm nay** (14 quẻ, có cả quẻ "Hạ Hạ") |
 | Cầu an | 🚕 Nhắc "Đã uống rượu bia thì không lái xe" khi bạn say |
 
+- **Nhân vật chibi đa dạng:** đầu tròn to, người nhỏ, tay chân ngắn. Có nam và nữ (chọn ở màn hình vào bar). Mỗi người có kiểu tóc riêng (ngắn, trọc, dài, búi, đuôi ngựa, nón lưỡi trai), áo (thun, tay dài, ba lỗ, hoodie, váy liền), quần hoặc váy (quần dài, quần short, chân váy), có thể đeo kính, nơ, má hồng, với nhiều màu da, tóc và giày. Áo theo màu bạn chọn. Bấm **🎲 Đổi đồ** để random bộ khác. Cả bộ đồ được gói thành một số `look` và đồng bộ qua Firebase, nên người khác thấy đúng bộ bạn mặc. Mỗi người có 4 kiểu nhảy: đấm tay, dang tay, giơ hai tay, chống cằm chill.
 - **Nhạc tự tổng hợp** bằng Web Audio, không cần file mp3 nên không dính bản quyền: Vinahouse 138 BPM, EDM Bigroom 128, Lofi Chill 84. Visual bám đúng từng nhịp kick đã lên lịch.
+- **Phát nhạc từ YouTube:** bấm **▶ YouTube** trong thanh DJ rồi dán link (`youtube.com/watch?v=…`, `youtu.be/…`, `/shorts/…`, `music.youtube.com`). Chỉ phát tiếng, video được giấu trong khung 1px. Trình duyệt không cho đọc âm thanh từ YouTube, nên đèn và sàn chạy theo một đồng hồ nhịp: chỉnh BPM bằng −/+ hoặc bấm **👆 Tap nhịp** theo bài 4 lần để đèn bắt đúng nhịp. Video nào chủ kênh chặn nhúng thì sẽ báo lỗi.
 - **Độ phê:** mỗi hành động của bạn (và một phần của người khác) làm đầy thanh. Đầy 100% thì **DROP!!!**: chớp sáng, kèn hơi, laser và đám đông nhảy mạnh lên.
 - **Độ say:** uống càng nhiều thì cả thế giới càng nghiêng và màu bị lệch (chromatic aberration), rồi tỉnh dần theo thời gian.
 - **Multiplayer realtime:** thấy avatar và tên của người khác trên sàn, họ đi lại, uống, bắn pháo giấy là hiện ngay chỗ họ đứng. Câu hét chat được chiếu lên màn LED sau lưng DJ. Có bộ đếm toàn cầu (lần dzô, ly đã cạn, lượt quẩy, pháo giấy).
@@ -49,7 +51,7 @@ Mở http://localhost:3000. Không có file `.env.local` thì app chạy ở ch�
 
 | Path | Nội dung |
 |---|---|
-| `presence/{uid}` | `name, color, x, z, lastSeen`: ai đang ở trong bar và đứng ở đâu. Heartbeat 15s; ai im quá 45s thì bị ẩn. |
+| `presence/{uid}` | `name, color, look, gender, x, z, lastSeen`: ai đang ở trong bar và đứng ở đâu. Heartbeat 15s; ai im quá 45s thì bị ẩn. |
 | `shouts/{id}` | `uid, name, color, text, kind: chat\|action, action?, createdAt`: chat và các hành động. Chỉ được thêm, không sửa. |
 | `stats/global` | `dzo, drinks, quay, confetti`: bộ đếm toàn cầu, rules chỉ cho tăng +1 mỗi lần. |
 
@@ -68,6 +70,8 @@ src/
       ClubScene.tsx       Canvas, postprocessing, camera, độ lắc khi say
       Venue.tsx           sàn LED, màn LED shader, DJ booth, loa, quầy bar, laser, disco ball
       People.tsx          đám đông NPC (instanced), avatar người chơi, di chuyển
+      chibi.ts            rig nhân vật chibi, bảng màu trang phục, các điệu nhảy
+      labels.tsx          tên và emoji gắn vào vị trí 3D (DOM thuần)
       Effects.tsx         emoji bay lên, pháo giấy
       pulse.ts            số liệu audio dùng chung cho từng frame
   lib/

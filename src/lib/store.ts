@@ -10,6 +10,8 @@ export interface Patron {
   z: number;
   lastSeen: number;
   bot?: boolean;
+  look?: number; // outfit seed (see makeLook)
+  gender?: "m" | "f";
 }
 
 export interface Shout {
@@ -38,12 +40,21 @@ export interface Stats {
   confetti: number;
 }
 
+export interface YtTrack {
+  id: string;
+  title: string;
+  status: "loading" | "playing" | "paused" | "error";
+  error?: string;
+}
+
 interface ClubState {
   joined: boolean;
-  me: { id: string; name: string; color: string };
+  me: { id: string; name: string; color: string; look: number; gender: "m" | "f" };
   myPos: { x: number; z: number };
   genre: Genre;
   muted: boolean;
+  yt: YtTrack | null; // when set, a YouTube track replaces the built-in DJ
+  bpm: number; // beat clock tempo used for visuals while YouTube plays
   hype: number; // 0..100 "độ phê"
   tipsy: number; // grows with drinks, decays slowly
   online: boolean; // Firebase connected (false = demo mode)
@@ -64,10 +75,12 @@ const uid = () => Math.random().toString(36).slice(2, 10);
 
 export const useClub = create<ClubState>((set, get) => ({
   joined: false,
-  me: { id: "local-" + uid(), name: "", color: "#ff2bd6" },
+  me: { id: "local-" + uid(), name: "", color: "#ff2bd6", look: Math.floor(Math.random() * 2 ** 31), gender: Math.random() < 0.5 ? "m" : "f" },
   myPos: { x: (Math.random() - 0.5) * 6, z: 1 + Math.random() * 2 },
   genre: "vinahouse",
   muted: false,
+  yt: null,
+  bpm: 124,
   hype: 20,
   tipsy: 0,
   online: false,

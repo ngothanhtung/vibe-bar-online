@@ -57,6 +57,11 @@ body {
   transition: background 0.15s;
 }
 .chip:hover { background: rgba(255, 255, 255, 0.14); }
+.chip-yt {
+  background: rgba(220, 38, 38, 0.35);
+  box-shadow: 0 0 12px rgba(220, 38, 38, 0.5);
+}
+.chip:disabled { opacity: 0.4; }
 .chip-on {
   background: linear-gradient(90deg, var(--neon-pink), #7a2bff);
   box-shadow: 0 0 14px rgba(255, 43, 214, 0.6);

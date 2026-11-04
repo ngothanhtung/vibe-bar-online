@@ -2,9 +2,11 @@
 
 import { useEffect, useState } from "react";
 import { engine, GENRES, type Genre } from "@/lib/audio";
-import { doAction, sendShout } from "@/lib/club";
+import { doAction, rerollLook, sendShout } from "@/lib/club";
 import { ACTIONS, DRUNK_LINES, FORTUNES, randomOf, type ActionKind } from "@/lib/content";
 import { useClub } from "@/lib/store";
+import { ytAudio } from "@/lib/youtube";
+import { NowPlaying, stopYouTube, YouTubeLinkForm } from "./YouTubeDj";
 
 const fmt = (n: number) => new Intl.NumberFormat("vi-VN").format(n);
 const ORDER: ActionKind[] = ["beer", "cocktail", "shot", "dzo", "quay", "confetti", "horn"];
@@ -21,6 +23,9 @@ function TopBar() {
           <span className={`h-2 w-2 rounded-full ${online ? "bg-lime-400 animate-pulse" : "bg-amber-400"}`} />
           {online ? `${fmt(count)} dân chơi đang online` : `Chế độ demo · ${count} bot đang quẩy`}
         </div>
+        <button className="chip ml-2 mt-1 bg-black/50 text-xs backdrop-blur" onClick={rerollLook} title="Random bộ đồ, kiểu tóc, phụ kiện mới">
+          🎲 Đổi đồ
+        </button>
       </div>
       <div className="pointer-events-auto grid grid-cols-4 gap-1.5 text-xs sm:flex sm:gap-2 sm:text-sm">
         {[
@@ -44,31 +49,47 @@ function TopBar() {
 function DjPanel() {
   const genre = useClub((s) => s.genre);
   const muted = useClub((s) => s.muted);
+  const yt = useClub((s) => s.yt);
   const set = useClub((s) => s.set);
+  const [linkOpen, setLinkOpen] = useState(false);
   const pick = (g: Genre) => {
+    if (useClub.getState().yt) stopYouTube();
     engine.setGenre(g);
     engine.sfx("whoosh");
     set({ genre: g });
   };
   return (
-    <div className="glass pointer-events-auto flex max-w-full items-center gap-1 overflow-x-auto p-1.5 text-xs">
-      <span className="px-2 opacity-70">DJ ơi:</span>
-      {(Object.keys(GENRES) as Genre[]).map((g) => (
-        <button key={g} onClick={() => pick(g)} className={`chip ${genre === g ? "chip-on" : ""}`}>
-          {GENRES[g].emoji} {GENRES[g].label}
+    <>
+      {linkOpen && <YouTubeLinkForm onDone={() => setLinkOpen(false)} />}
+      <NowPlaying />
+      <div className="glass pointer-events-auto flex max-w-full items-center gap-1 overflow-x-auto p-1.5 text-xs">
+        <span className="px-2 opacity-70">DJ ơi:</span>
+        {(Object.keys(GENRES) as Genre[]).map((g) => (
+          <button key={g} onClick={() => pick(g)} className={`chip ${!yt && genre === g ? "chip-on" : ""}`}>
+            {GENRES[g].emoji} {GENRES[g].label}
+          </button>
+        ))}
+        <button
+          onClick={() => setLinkOpen((o) => !o)}
+          className={`chip ${yt ? "chip-yt" : ""}`}
+          aria-expanded={linkOpen}
+          title="Dán link YouTube để phát nhạc"
+        >
+          <span className="text-red-500">▶</span> YouTube
         </button>
-      ))}
-      <button
-        className="chip"
-        aria-label={muted ? "Bật tiếng" : "Tắt tiếng"}
-        onClick={() => {
-          engine.setVolume(muted ? 0.8 : 0);
-          set({ muted: !muted });
-        }}
-      >
-        {muted ? "🔇" : "🔊"}
-      </button>
-    </div>
+        <button
+          className="chip"
+          aria-label={muted ? "Bật tiếng" : "Tắt tiếng"}
+          onClick={() => {
+            engine.setVolume(muted ? 0.8 : 0);
+            ytAudio.setVolume(muted ? 0.8 : 0);
+            set({ muted: !muted });
+          }}
+        >
+          {muted ? "🔇" : "🔊"}
+        </button>
+      </div>
+    </>
   );
 }
 

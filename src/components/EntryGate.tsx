@@ -5,6 +5,8 @@ import { AVATAR_COLORS } from "@/lib/content";
 
 const NAME_KEY = "quaybar:name";
 const COLOR_KEY = "quaybar:color";
+const GENDER_KEY = "quaybar:gender";
+const LOOK_KEY = "quaybar:look";
 
 function load(key: string) {
   try {
@@ -14,10 +16,13 @@ function load(key: string) {
   }
 }
 
-export default function EntryGate({ onEnter }: { onEnter: (name: string, color: string) => void }) {
+export type Gender = "m" | "f";
+
+export default function EntryGate({ onEnter }: { onEnter: (name: string, color: string, gender: Gender, look: number | null) => void }) {
   const [name, setName] = useState("");
   const [color, setColor] = useState(AVATAR_COLORS[0]);
   const [adult, setAdult] = useState(false);
+  const [gender, setGender] = useState<Gender>("m");
 
   useEffect(() => {
     // Restore the last name/color after hydration (localStorage is browser-only).
@@ -26,6 +31,8 @@ export default function EntryGate({ onEnter }: { onEnter: (name: string, color: 
     /* eslint-disable react-hooks/set-state-in-effect */
     if (n) setName(n);
     if (c && AVATAR_COLORS.includes(c)) setColor(c);
+    const g = load(GENDER_KEY);
+    if (g === "m" || g === "f") setGender(g);
     /* eslint-enable react-hooks/set-state-in-effect */
   }, []);
 
@@ -42,8 +49,10 @@ export default function EntryGate({ onEnter }: { onEnter: (name: string, color: 
           try {
             localStorage.setItem(NAME_KEY, n);
             localStorage.setItem(COLOR_KEY, color);
+            localStorage.setItem(GENDER_KEY, gender);
           } catch {}
-          onEnter(n, color);
+          const saved = Number(load(LOOK_KEY));
+          onEnter(n, color, gender, Number.isFinite(saved) && saved > 0 ? saved : null);
         }}
       >
         <p className="text-center text-xs uppercase tracking-[0.35em] text-cyan-300/80">Đi chùa online thì có rồi…</p>
@@ -66,7 +75,28 @@ export default function EntryGate({ onEnter }: { onEnter: (name: string, color: 
           className="mt-1 w-full rounded-xl border border-white/15 bg-white/5 px-4 py-3 outline-none focus:border-fuchsia-400"
         />
 
-        <div className="mt-4 text-xs uppercase tracking-widest opacity-70">Màu outfit</div>
+        <div className="mt-4 text-xs uppercase tracking-widest opacity-70">Nhân vật</div>
+        <div className="mt-2 grid grid-cols-2 gap-2" role="radiogroup" aria-label="Giới tính nhân vật">
+          {(
+            [
+              ["m", "🙋‍♂️ Nam"],
+              ["f", "🙋‍♀️ Nữ"],
+            ] as const
+          ).map(([g, label]) => (
+            <button
+              type="button"
+              key={g}
+              role="radio"
+              aria-checked={gender === g}
+              onClick={() => setGender(g)}
+              className={`rounded-xl border px-3 py-2 text-sm transition ${gender === g ? "border-fuchsia-400 bg-fuchsia-500/25" : "border-white/15 bg-white/5 opacity-70"}`}
+            >
+              {label}
+            </button>
+          ))}
+        </div>
+
+        <div className="mt-4 text-xs uppercase tracking-widest opacity-70">Màu áo</div>
         <div className="mt-2 flex flex-wrap gap-2">
           {AVATAR_COLORS.map((c) => (
             <button

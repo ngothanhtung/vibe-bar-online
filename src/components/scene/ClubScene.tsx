@@ -11,6 +11,7 @@ import { pulse } from "./pulse";
 import { BarCounter, DanceFloor, DiscoBall, DJBooth, Lasers, LedScreen, MovingLights, Room, Speakers } from "./Venue";
 import { Crowd, Patrons, useMovement } from "./People";
 import { ConfettiLayer, FloatingFxLayer } from "./Effects";
+import { LabelLayer } from "./labels";
 
 /** Samples the audio engine once per frame into the shared `pulse` object. */
 function AudioPulse() {
@@ -83,6 +84,7 @@ function SceneContent() {
     <>
       <AudioPulse />
       <ResponsiveCamera />
+      <LabelLayer />
       <color attach="background" args={["#05020a"]} />
       <fog attach="fog" args={["#07030d", 12, 30]} />
       <MovingLights />

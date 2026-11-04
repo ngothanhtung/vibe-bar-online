@@ -11,8 +11,10 @@ service cloud.firestore {
         && validName(request.resource.data.name)
         && request.resource.data.color is string && request.resource.data.color.size() <= 9
         && request.resource.data.x is number && request.resource.data.z is number
+        && request.resource.data.look is int
+        && request.resource.data.gender in ['m', 'f']
         && request.resource.data.lastSeen == request.time
-        && request.resource.data.keys().hasOnly(['name', 'color', 'x', 'z', 'lastSeen']);
+        && request.resource.data.keys().hasOnly(['name', 'color', 'look', 'gender', 'x', 'z', 'lastSeen']);
       allow delete: if signedIn() && request.auth.uid == uid;
     }
 

@@ -1,46 +1,51 @@
 "use client";
 
-import { useMemo, useRef } from "react";
+import { useEffect, useMemo, useRef } from "react";
 import { useFrame } from "@react-three/fiber";
-import { Html } from "@react-three/drei";
 import * as THREE from "three";
-import { useClub, type FloatFx } from "@/lib/store";
+import { useClub } from "@/lib/store";
+import { addLabel, removeLabel, type Label } from "./labels";
 
-function FloatingEmoji({ fx }: { fx: FloatFx }) {
-  const group = useRef<THREE.Group>(null);
-  const el = useRef<HTMLDivElement>(null);
-  const drift = useMemo(() => (Math.random() - 0.5) * 0.6, []);
-  useFrame(() => {
-    const age = (performance.now() - fx.born) / 2500;
-    if (group.current) {
-      group.current.position.set(fx.x + drift * age, 2.3 + age * 1.6, fx.z);
-      group.current.visible = age < 1;
-    }
-    if (el.current) {
-      el.current.style.opacity = String(Math.max(0, 1 - age * age));
-      el.current.style.transform = `scale(${0.6 + Math.min(age * 4, 1) * 0.8})`;
-    }
-  });
-  return (
-    <group ref={group}>
-      <Html center distanceFactor={8} zIndexRange={[20, 0]} style={{ pointerEvents: "none" }}>
-        <div ref={el} className="float-emoji">
-          {fx.emoji}
-        </div>
-      </Html>
-    </group>
-  );
-}
+const FX_LIFE = 2500;
 
+/** Emojis that float up from whoever did an action. */
 export function FloatingFxLayer() {
   const fx = useClub((s) => s.fx);
-  return (
-    <>
-      {fx.map((f) => (
-        <FloatingEmoji key={f.id} fx={f} />
-      ))}
-    </>
-  );
+  const live = useRef(new Map<string, Label>());
+
+  useEffect(() => {
+    for (const f of fx) {
+      if (live.current.has(f.id) || performance.now() - f.born > FX_LIFE) continue;
+      const drift = (Math.random() - 0.5) * 0.6;
+      const label = addLabel(
+        "float-emoji",
+        (out) => {
+          const age = (performance.now() - f.born) / FX_LIFE;
+          if (age >= 1) {
+            removeLabel(label);
+            live.current.delete(f.id);
+            return false;
+          }
+          out.set(f.x + drift * age, 2.3 + age * 1.6, f.z);
+          label.el.style.opacity = String(1 - age * age);
+          return true;
+        },
+        8,
+      );
+      label.el.textContent = f.emoji;
+      live.current.set(f.id, label);
+    }
+  }, [fx]);
+
+  useEffect(() => {
+    const map = live.current;
+    return () => {
+      map.forEach(removeLabel);
+      map.clear();
+    };
+  }, []);
+
+  return null;
 }
 
 const CONFETTI_N = 260;

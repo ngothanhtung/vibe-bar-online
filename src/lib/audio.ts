@@ -35,6 +35,8 @@ class BeatEngine {
   private kickTimes: number[] = [];
   genre: Genre = "vinahouse";
   playing = false;
+  /** When set, an outside source (YouTube) plays the music and visuals follow this beat clock. */
+  private external: { bpm: number; start: number } | null = null;
 
   async start() {
     if (!this.ctx) this.init();
@@ -51,6 +53,40 @@ class BeatEngine {
     this.playing = false;
     if (this.timer) clearInterval(this.timer);
     this.timer = null;
+  }
+
+  /** Silence the synth and drive visuals from a virtual beat clock instead. */
+  useExternal(bpm: number) {
+    this.stop();
+    this.external = { bpm, start: performance.now() };
+  }
+
+  /** Back to the built-in synth. */
+  useInternal() {
+    this.external = null;
+    void this.start();
+  }
+
+  get externalBpm() {
+    return this.external?.bpm ?? null;
+  }
+
+  /** Change the beat clock's tempo; `alignNow` puts a beat exactly on this moment (tap tempo). */
+  setExternalBpm(bpm: number, alignNow = false) {
+    if (!this.external) return;
+    const clamped = Math.max(60, Math.min(200, bpm));
+    if (alignNow) this.external = { bpm: clamped, start: performance.now() };
+    else {
+      // keep the current phase so the visuals don't jump
+      const phase = this.externalPhase();
+      this.external = { bpm: clamped, start: performance.now() - phase * (60_000 / clamped) };
+    }
+  }
+
+  private externalPhase() {
+    if (!this.external) return 0;
+    const spbMs = 60_000 / this.external.bpm;
+    return ((performance.now() - this.external.start) / spbMs) % 1;
   }
 
   setVolume(v: number) {
@@ -314,6 +350,10 @@ class BeatEngine {
   // ---------- analysis for visuals ----------
   /** 0..1, spikes on every scheduled kick and decays quickly. */
   kickEnvelope() {
+    if (this.external) {
+      const spb = 60 / this.external.bpm;
+      return Math.exp(-this.externalPhase() * spb * 7);
+    }
     if (!this.ctx || !this.playing) return 0;
     const now = this.ctx.currentTime;
     let last = -Infinity;
@@ -324,12 +364,19 @@ class BeatEngine {
 
   /** Beat phase 0..1 within the current quarter note. */
   beatPhase() {
+    if (this.external) return this.externalPhase();
     if (!this.ctx || !this.playing) return (performance.now() / 500) % 1;
     const spb = 60 / GENRES[this.genre].bpm;
     return (this.ctx.currentTime / spb) % 1;
   }
 
   levels() {
+    if (this.external) {
+      // Cross-origin YouTube audio can't be analysed, so fake levels from the beat clock.
+      const k = this.kickEnvelope();
+      const t = performance.now() / 1000;
+      return { bass: 0.3 + k * 0.5, mid: 0.3 + 0.1 * Math.sin(t * 3), high: 0.2 + 0.1 * Math.sin(t * 7) };
+    }
     if (!this.ctx) return { bass: 0, mid: 0, high: 0 };
     this.analyser.getByteFrequencyData(this.freqData);
     const d = this.freqData;

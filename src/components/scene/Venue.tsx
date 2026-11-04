@@ -1,11 +1,12 @@
 "use client";
 
-import { useMemo, useRef } from "react";
+import { useEffect, useMemo, useRef } from "react";
 import { useFrame, type ThreeEvent } from "@react-three/fiber";
 import { Sparkles, Text } from "@react-three/drei";
 import * as THREE from "three";
 import { pulse } from "./pulse";
 import { useClub } from "@/lib/store";
+import { createRig, dressRig, poseRig, type Look, type Rig } from "./chibi";
 
 export const FLOOR = { cols: 14, rows: 10, size: 1, x0: -7, z0: -2.5 };
 
@@ -157,16 +158,30 @@ export function LedScreen() {
 
 /** DJ booth with an animated robo-DJ. */
 export function DJBooth() {
-  const dj = useRef<THREE.Group>(null);
-  const arm = useRef<THREE.Mesh>(null);
+  const rig = useMemo(() => {
+    const look: Look = {
+      gender: "m",
+      hair: "short",
+      top: "hoodie",
+      bottom: "pants",
+      glasses: false,
+      bow: false,
+      blush: false,
+      palette: { skin: "#f6d2b4", hair: "#1d1a1f", eye: "#16121a", blush: "#ff8fa8", outfit: "#1b1b24", accent: "#ff2bd6", pants: "#1a1a1f", shoe: "#ff2bd6", dark: "#141418" },
+    };
+    const r = createRig(look);
+    dressRig(r, look.palette);
+    return r;
+  }, []);
   const strip = useRef<THREE.MeshBasicMaterial>(null);
   const decks = useRef<THREE.Mesh[]>([]);
   useFrame((_, dt) => {
-    if (dj.current) {
-      dj.current.position.y = Math.abs(Math.sin(pulse.phase * Math.PI)) * 0.12;
-      dj.current.rotation.y = Math.sin(pulse.time * 0.8) * 0.3;
+    poseRig(rig, { time: pulse.time, phase: pulse.phase, energy: 0.7 + pulse.drop * 0.3, style: pulse.drop > 0.2 ? 2 : 0, seed: 0.3 });
+    if (pulse.drop <= 0.2) {
+      // left hand rides the deck, scratching
+      rig.shoulder[0].rotation.set(-0.85, 0, 0.15);
+      rig.elbow[0].rotation.set(-0.7, Math.sin(pulse.time * 9) * 0.35, 0);
     }
-    if (arm.current) arm.current.rotation.z = -0.4 - pulse.kick * 1.6 - pulse.drop * 1.2;
     if (strip.current) strip.current.color.setHSL((pulse.time * 0.1) % 1, 1, 0.35 + pulse.kick * 0.3);
     decks.current.forEach((d) => d && (d.rotation.y += dt * 4));
   });
@@ -192,35 +207,51 @@ export function DJBooth() {
           <meshStandardMaterial color="#222" metalness={0.8} roughness={0.2} />
         </mesh>
       ))}
-      {/* DJ */}
-      <group ref={dj} position={[0, 0.5, -0.2]}>
-        <mesh position={[0, 1.2, 0]}>
-          <capsuleGeometry args={[0.32, 0.8, 6, 12]} />
-          <meshStandardMaterial color="#111" emissive="#3a0050" />
-        </mesh>
-        <mesh position={[0, 2.05, 0]}>
-          <sphereGeometry args={[0.28, 20, 20]} />
-          <meshStandardMaterial color="#e8c4a0" />
-        </mesh>
-        {/* shades */}
-        <mesh position={[0, 2.08, 0.24]}>
-          <boxGeometry args={[0.42, 0.09, 0.05]} />
-          <meshBasicMaterial color="#00e5ff" toneMapped={false} />
-        </mesh>
-        <mesh position={[0, 2.1, 0]} rotation-z={Math.PI / 2}>
-          <torusGeometry args={[0.31, 0.04, 8, 24, Math.PI]} />
-          <meshStandardMaterial color="#ff2bd6" emissive="#ff2bd6" emissiveIntensity={0.6} />
-        </mesh>
-        <mesh ref={arm} position={[0.38, 1.5, 0]}>
-          <capsuleGeometry args={[0.08, 0.6, 4, 8]} />
-          <meshStandardMaterial color="#111" emissive="#3a0050" />
-        </mesh>
+      {/* DJ: a chibi on a riser so the big head clears the desk */}
+      <mesh position={[0, 0.65, -0.3]}>
+        <boxGeometry args={[1.2, 0.3, 0.8]} />
+        <meshStandardMaterial color="#120a1c" />
+      </mesh>
+      <group position={[0, 0.8, -0.3]}>
+        <primitive object={rig.root} />
       </group>
-      <Text position={[0, 3.25, -0.2]} fontSize={0.28} color="#00e5ff" anchorX="center" outlineWidth={0.015} outlineColor="#000">
+      <DjHeadphones rig={rig} />
+      <Text position={[0, 2.75, -0.3]} fontSize={0.28} color="#00e5ff" anchorX="center" outlineWidth={0.015} outlineColor="#000">
         DJ MÕ AI
       </Text>
     </group>
   );
+}
+
+/** Headphones + shades parented to the DJ's head joint. */
+function DjHeadphones({ rig }: { rig: Rig }) {
+  const gear = useMemo(() => {
+    const g = new THREE.Group();
+    const band = new THREE.Mesh(
+      new THREE.TorusGeometry(0.32, 0.03, 8, 24, Math.PI),
+      new THREE.MeshBasicMaterial({ color: "#ff2bd6", toneMapped: false }),
+    );
+    band.position.set(0, 0.3, 0);
+    band.rotation.y = Math.PI / 2;
+    g.add(band);
+    for (const side of [1, -1]) {
+      const cup = new THREE.Mesh(new THREE.CylinderGeometry(0.1, 0.1, 0.06, 16), new THREE.MeshBasicMaterial({ color: "#ff2bd6", toneMapped: false }));
+      cup.rotation.z = Math.PI / 2;
+      cup.position.set(0.31 * side, 0.27, 0);
+      g.add(cup);
+    }
+    const shades = new THREE.Mesh(new THREE.BoxGeometry(0.36, 0.07, 0.03), new THREE.MeshBasicMaterial({ color: "#00e5ff", toneMapped: false }));
+    shades.position.set(0, 0.27, 0.28);
+    g.add(shades);
+    return g;
+  }, []);
+  useEffect(() => {
+    rig.head.add(gear);
+    return () => {
+      rig.head.remove(gear);
+    };
+  }, [rig, gear]);
+  return null;
 }
 
 function Speaker({ x }: { x: number }) {

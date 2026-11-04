@@ -25,9 +25,12 @@ export default function ClubApp() {
         <Hud />
       ) : (
         <EntryGate
-          onEnter={async (name, color) => {
+          onEnter={async (name, color, gender, look) => {
             const s = useClub.getState();
-            s.set({ me: { ...s.me, name, color }, joined: true });
+            s.set({ me: { ...s.me, name, color, gender, look: look ?? s.me.look }, joined: true });
+            try {
+              localStorage.setItem("quaybar:look", String(look ?? s.me.look)); // keep the same outfit next visit
+            } catch {}
             await engine.start(); // must run inside the click to unlock audio
             engine.sfx("horn");
             setJoined(true);

@@ -32,6 +32,20 @@ const STAT_KEY: Partial<Record<ActionKind, keyof Stats>> = {
 };
 
 let db: Firestore | null = null;
+let pushPresence: (() => void) | null = null;
+
+const LOOK_KEY = "quaybar:look";
+
+/** New random outfit for me; others see it on the next presence write. */
+export function rerollLook() {
+  const s = useClub.getState();
+  const look = Math.floor(Math.random() * 2 ** 31);
+  s.set({ me: { ...s.me, look } });
+  try {
+    localStorage.setItem(LOOK_KEY, String(look));
+  } catch {}
+  pushPresence?.();
+}
 let joinedAt = 0;
 
 // ---------------------------------------------------------------------------
@@ -152,6 +166,8 @@ function startFirebase(): () => void {
     setDoc(doc(db, "presence", myUid), {
       name: s.me.name,
       color: s.me.color,
+      look: s.me.look,
+      gender: s.me.gender,
       x: Math.round(s.myPos.x * 100) / 100,
       z: Math.round(s.myPos.z * 100) / 100,
       lastSeen: serverTimestamp(),
@@ -182,6 +198,8 @@ function startFirebase(): () => void {
             x: Number(v.x ?? 0),
             z: Number(v.z ?? 0),
             lastSeen: v.lastSeen?.toMillis?.() ?? Date.now(),
+            look: typeof v.look === "number" ? v.look : undefined,
+            gender: v.gender === "f" || v.gender === "m" ? v.gender : undefined,
           };
         });
         refreshPatrons();
@@ -226,6 +244,7 @@ function startFirebase(): () => void {
   });
   unsubs.push(unAuth);
 
+  pushPresence = () => writePresence(true);
   const moveTimer = setInterval(() => writePresence(false), 1000);
   const heartbeat = setInterval(() => {
     writePresence(true);
@@ -241,6 +260,7 @@ function startFirebase(): () => void {
     clearInterval(heartbeat);
     window.removeEventListener("pagehide", leave);
     leave();
+    pushPresence = null;
     unsubs.forEach((u) => u());
     db = null;
   };
@@ -258,6 +278,8 @@ function startDemo(): () => void {
     z: Math.random() * 6 - 1,
     lastSeen: Date.now(),
     bot: true,
+    look: Math.floor(Math.random() * 2 ** 31),
+    gender: (i % 2 === 0 ? "m" : "f") as "m" | "f",
   }));
   useClub.getState().set({ patrons: bots, online: false });
 
