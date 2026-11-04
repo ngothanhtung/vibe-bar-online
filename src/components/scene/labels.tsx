@@ -95,20 +95,17 @@ export function LabelLayer() {
 }
 
 /** Crisp DOM name tag floating above a performer (same style as the players' tags). */
-export function useStageTag(group: { current: THREE.Object3D | null }, name: string, color: string, height = FIGURE_HEIGHT + 0.3, splitAfterWords = 0) {
+export function useStageTag(group: { current: THREE.Object3D | null }, name: string, color: string, height = FIGURE_HEIGHT + 0.3) {
   useEffect(() => {
-    const label = addLabel(`nametag stage${splitAfterWords > 0 ? " multiline" : ""}`, (out) => {
+    const label = addLabel("nametag stage", (out) => {
       if (!group.current) return false;
       group.current.getWorldPosition(out);
       out.y += height;
       return true;
     });
-    const words = name.split(" ");
-    label.el.textContent = splitAfterWords > 0 && words.length > splitAfterWords
-      ? `${words.slice(0, splitAfterWords).join(" ")}\n${words.slice(splitAfterWords).join(" ")}`
-      : name;
+    label.el.textContent = name;
     label.el.style.borderColor = color;
     label.el.style.color = color;
     return () => removeLabel(label);
-  }, [group, name, color, height, splitAfterWords]);
+  }, [group, name, color, height]);
 }

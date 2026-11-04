@@ -30,7 +30,6 @@ function TopBar() {
         <button className="chip ml-1 mt-1 bg-black/50 text-xs backdrop-blur" onClick={() => rerollLook("hero")} title="Hóa thân siêu anh hùng: áo choàng, giáp, ninja">
           🦸 Siêu anh hùng
         </button>
-        <PixelToggle />
       </div>
       <div className="pointer-events-auto grid grid-cols-4 gap-1.5 text-xs sm:flex sm:gap-2 sm:text-sm">
         {[
@@ -48,21 +47,6 @@ function TopBar() {
         ))}
       </div>
     </div>
-  );
-}
-
-function PixelToggle() {
-  const pixelArt = useClub((s) => s.pixelArt);
-  const set = useClub((s) => s.set);
-  return (
-    <button
-      className={`chip ml-1 mt-1 text-xs backdrop-blur ${pixelArt ? "chip-on" : "bg-black/50"}`}
-      onClick={() => set({ pixelArt: !pixelArt })}
-      aria-pressed={pixelArt}
-      title="Bật/tắt đồ họa pixel art"
-    >
-      👾 Pixel
-    </button>
   );
 }
 

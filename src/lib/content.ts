@@ -38,7 +38,7 @@ export const FEMALE_NAMES = [
 export const TREND_NAMES = [...MALE_NAMES, ...FEMALE_NAMES];
 
 /** Names already taken by the people on stage. */
-export const STAGE_NAMES = ["Chi Chanh Chua", "Lan Lả Lướt", "Hương Hóng Hớt", "Linh Lí Lắc", "Cường Cay Cú", "Bình Bu Bám"];
+export const STAGE_NAMES = ["Chi Chanh Chua", "Lan Lả Lướt", "Hương Hóng Hớt", "Linh Lí Lắc", "Cường Cục Cằn", "Bình Bừa Bãi"];
 
 type G = "m" | "f";
 const poolFor = (g: G) => (g === "m" ? MALE_NAMES : FEMALE_NAMES).filter((n) => !STAGE_NAMES.includes(n));

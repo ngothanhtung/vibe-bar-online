@@ -21,7 +21,6 @@ import { Crowd, Patrons, useMovement } from "./People";
 import { ConfettiLayer, FloatingFxLayer } from "./Effects";
 import { LabelLayer } from "./labels";
 import { FigureInstancer } from "./figures";
-import { usePixelCanvas } from "./pixel";
 
 /** Samples the audio engine once per frame into the shared `pulse` object. */
 function AudioPulse() {
@@ -163,16 +162,14 @@ function SceneContent() {
 }
 
 export default function ClubScene() {
-  const pixelArt = useClub((s) => s.pixelArt);
   // Resolution cap that drops automatically when the frame rate does (and climbs back when it recovers).
   const [dprCap, setDprCap] = useState(1.5);
-  const pixel = usePixelCanvas(pixelArt, dprCap);
   return (
     <Canvas
-      dpr={pixel.dpr}
+      dpr={Math.min(typeof window === "undefined" ? 1 : window.devicePixelRatio, dprCap)}
       camera={{ position: [0, 7.2, 19.5], fov: 55 }}
       gl={{ antialias: false, powerPreference: "high-performance", stencil: false }}
-      style={{ position: "fixed", inset: 0, ...pixel.style }}
+      style={{ position: "fixed", inset: 0 }}
     >
       {/* Steps the resolution between 0.85x and 1.5x with the measured frame rate. The floor keeps
           it sharp, and a slow start (shader compiles) can't lock it low: on fallback it settles at 1x. */}

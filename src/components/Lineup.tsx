@@ -8,7 +8,6 @@ import { Canvas, useFrame } from "@react-three/fiber";
 import { OrbitControls, Text } from "@react-three/drei";
 import { COSTUMES, createRig, DANCES, dressRig, makeLook, poseRig, randomLookSeed } from "./scene/chibi";
 import { pulse } from "./scene/pulse";
-import { usePixelCanvas } from "./scene/pixel";
 import { AVATAR_COLORS } from "@/lib/content";
 
 function Clock() {
@@ -50,9 +49,8 @@ function Dancer({ index, x, z }: { index: number; x: number; z: number }) {
 }
 
 export default function Lineup() {
-  const pixel = usePixelCanvas(false);
   return (
-    <Canvas dpr={pixel.dpr} camera={{ position: [0, 6.5, 9.5], fov: 50 }} style={{ position: "fixed", inset: 0, background: "#f3e9ff", ...pixel.style }}>
+    <Canvas dpr={Math.min(typeof window === "undefined" ? 1 : window.devicePixelRatio, 1.5)} camera={{ position: [0, 6.5, 9.5], fov: 50 }} style={{ position: "fixed", inset: 0, background: "#f3e9ff" }}>
       <Clock />
       <ambientLight intensity={0.55} />
       <directionalLight position={[3, 6, 5]} intensity={1.6} />

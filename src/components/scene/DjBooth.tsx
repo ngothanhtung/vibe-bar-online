@@ -102,7 +102,7 @@ function Performer({ member }: { member: CrewMember }) {
 
   useFigure(rig, member.look.palette);
   const group = useRef<THREE.Group>(null);
-  useStageTag(group, member.name, member.gear, undefined, 2);
+  useStageTag(group, member.name, member.gear);
 
   useFrame(() => {
     const dropping = pulse.drop > 0.2;
@@ -552,9 +552,9 @@ function SparkFountains() {
 export function DJBooth() {
   return (
     <group position={[0, 0, -5]}>
-      {/* stage: 16 m wide to match the truss, 4.5 m deep */}
+      {/* stage: 18 m wide, 4.5 m deep */}
       <mesh position={[0, 0.25, -0.75]}>
-        <boxGeometry args={[16, 0.5, 4.5]} />
+        <boxGeometry args={[18, 0.5, 4.5]} />
         <meshStandardMaterial color="#120a1c" metalness={0.5} roughness={0.4} />
       </mesh>
       {/* raised rear tier behind the DJs for depth */}
@@ -568,7 +568,7 @@ export function DJBooth() {
       </mesh>
       {/* stage lip light strip */}
       <mesh position={[0, 0.5, 1.505]}>
-        <boxGeometry args={[16, 0.03, 0.01]} />
+        <boxGeometry args={[18, 0.03, 0.01]} />
         <meshBasicMaterial color="#ff2bd6" toneMapped={false} />
       </mesh>
       {/* desk body + top */}

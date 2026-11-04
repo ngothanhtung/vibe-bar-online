@@ -55,7 +55,6 @@ interface ClubState {
   genre: Genre;
   muted: boolean;
   camFocus: "floor" | "stage";
-  pixelArt: boolean; // low-res pixel-art render // camera preset; the user can still orbit freely afterwards
   yt: YtTrack | null; // when set, a YouTube track replaces the built-in DJ
   bpm: number; // beat clock tempo used for visuals while YouTube plays
   hype: number; // 0..100 "độ phê"
@@ -83,7 +82,6 @@ export const useClub = create<ClubState>((set, get) => ({
   genre: "vinahouse",
   muted: false,
   camFocus: "stage",
-  pixelArt: false,
   yt: null,
   bpm: 124,
   hype: 20,

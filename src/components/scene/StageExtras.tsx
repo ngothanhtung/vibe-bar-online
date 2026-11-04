@@ -294,7 +294,7 @@ function jeansDancer(x: number, z: number, name: string, skin: string, hairColor
 
 const DANCERS: { x: number; z?: number; name: string; look: Look; light: string; figureScale?: number }[] = [
   {
-    x: -4.4,
+    x: -3.7,
     z: 0.8,
     name: "CHI CHANH CHUA",
     light: "#ff2bd6",
@@ -316,7 +316,7 @@ const DANCERS: { x: number; z?: number; name: string; look: Look; light: string;
     },
   },
   {
-    x: 4.4,
+    x: 3.7,
     z: 0.8,
     name: "LAN LẢ LƯỚT",
     light: "#00e5ff",
@@ -338,30 +338,30 @@ const DANCERS: { x: number; z?: number; name: string; look: Look; light: string;
     },
   },
   // two more on each side, on podiums further out
-  jeansDancer(-5.8, 0.1, "HƯƠNG HÓNG HỚT", "#fde3cc", "#1d1a1f", "#ff3b5c", "#3d5f94", "#ff3b5c", { hat: "bucket" }),
-  jeansDancer(-7.2, 0.8, "PHƯƠNG PHỦ PHÀNG", "#f6d2b4", "#1d1a1f", "#ff7a1a", "#34507e", "#ffe600"),
-  jeansDancer(5.8, 0.1, "LINH LÍ LẮC", "#f6d2b4", "#1d1a1f", "#ffffff", "#25324f", "#00e5ff"),
-  jeansDancer(7.2, 0.8, "OANH LOANH QUANH", "#fde3cc", "#1d1a1f", "#a66bff", "#3d5f94", "#ff3b5c"),
+  jeansDancer(-5.5, 0.1, "HƯƠNG HÓNG HỚT", "#fde3cc", "#1d1a1f", "#ff3b5c", "#3d5f94", "#ff3b5c", { hat: "bucket" }),
+  jeansDancer(-7.3, 0.8, "PHƯƠNG PHỦ PHÀNG", "#f6d2b4", "#1d1a1f", "#ff7a1a", "#34507e", "#ffe600"),
+  jeansDancer(5.5, 0.1, "LINH LÍ LẮC", "#f6d2b4", "#1d1a1f", "#ffffff", "#25324f", "#00e5ff"),
+  jeansDancer(7.3, 0.8, "OANH LOANH QUANH", "#fde3cc", "#1d1a1f", "#a66bff", "#3d5f94", "#ff3b5c"),
 ];
 
 const BACK_ROW_DANCERS = [
-  maleDancer(-2.9, -1.5, "TUẤN TIỀN TỶ", "#f2c9a5", "#2a211c", "#34507e", "#f5f5f0", "#ff2bd6", { top: "tee", bottom: "shorts", chain: true }, 1, "#e33c83"),
-  maleDancer(-4, -1.5, "VŨ VƠ VÉT", "#e6b48a", "#1d1a1f", "#a33c5b", "#f5f5f0", "#ffe600", { top: "tank", bottom: "shorts", hat: "snapback" }, 1, "#f2c230"),
-  maleDancer(-5.1, -1.5, "TÙNG TÍ TỬNG", "#d9a37c", "#eceaf2", "#276a65", "#1c1c20", "#00e5ff", { top: "floral", bottom: "shorts", chain: true }, 1, "#276a65"),
-  maleDancer(-6.2, -1.5, "NAM NÔ NỨC", "#6b3f2a", "#3b2618", "#6c4a91", "#f5f5f0", "#7cff4f", { top: "hoodie", bottom: "shorts" }, 1, "#6c4a91"),
-  maleDancer(-7.3, -1.5, "CƯỜNG CAY CÚ", "#f2c9a5", "#2a211c", "#34507e", "#f5f5f0", "#7cff4f", { top: "jacket", bottom: "shorts", chain: true }, 0.88, "#34507e"),
-  maleDancer(2.9, -1.5, "VIỆT VẶN VẸO", "#eec09a", "#1d1a1f", "#a33c5b", "#1c1c20", "#00e5ff", { top: "long", bottom: "shorts", hat: "headband" }, 1, "#2497a8"),
-  maleDancer(4, -1.5, "PHONG PHỦ PHÀNG", "#f6d2b4", "#2a211c", "#34507e", "#f5f5f0", "#a66bff", { top: "tee", bottom: "shorts", chain: true, glasses: true }, 1, "#a66bff"),
-  maleDancer(5.1, -1.5, "VINH VỘI VÃ", "#d9a37c", "#eceaf2", "#276a65", "#1c1c20", "#ff3b5c", { top: "tank", bottom: "shorts", glasses: true }, 1, "#d23b58"),
-  maleDancer(6.2, -1.5, "SINH SUNG SỨC", "#e6b48a", "#3b2618", "#6c4a91", "#f5f5f0", "#ffe600", { top: "floral", bottom: "shorts", chain: true, glasses: true }, 1, "#32826f"),
-  maleDancer(7.3, -1.5, "BÌNH BU BÁM", "#e6b48a", "#eceaf2", "#f0ede6", "#1c1c20", "#a66bff", { top: "hoodie", bottom: "shorts" }, 0.88, "#f0ede6"),
+  maleDancer(-3.5, -1.5, "TUẤN TƯƠI TẮN", "#f2c9a5", "#2a211c", "#34507e", "#f5f5f0", "#ff2bd6", { top: "tee", bottom: "shorts", chain: true }, 1, "#e33c83"),
+  maleDancer(-4.8, -1.5, "VŨ VỪA VẶN", "#e6b48a", "#1d1a1f", "#a33c5b", "#f5f5f0", "#ffe600", { top: "tank", bottom: "shorts", hat: "snapback" }, 1, "#f2c230"),
+  maleDancer(-6.1, -1.5, "TÙNG TÍ TỬNG", "#d9a37c", "#eceaf2", "#276a65", "#1c1c20", "#00e5ff", { top: "floral", bottom: "shorts", chain: true }, 1, "#276a65"),
+  maleDancer(-7.4, -1.5, "NAM NÔ NỨC", "#6b3f2a", "#3b2618", "#6c4a91", "#f5f5f0", "#7cff4f", { top: "hoodie", bottom: "shorts" }, 1, "#6c4a91"),
+  maleDancer(-8.7, -1.5, "CƯỜNG CỤC CẰN", "#f2c9a5", "#2a211c", "#34507e", "#f5f5f0", "#7cff4f", { top: "jacket", bottom: "shorts", chain: true }, 0.88, "#34507e"),
+  maleDancer(3.5, -1.5, "VIỆT VẶN VẸO", "#eec09a", "#1d1a1f", "#a33c5b", "#1c1c20", "#00e5ff", { top: "long", bottom: "shorts", hat: "headband" }, 1, "#2497a8"),
+  maleDancer(4.8, -1.5, "PHONG PHƠI PHỚI", "#f6d2b4", "#2a211c", "#34507e", "#f5f5f0", "#a66bff", { top: "tee", bottom: "shorts", chain: true, glasses: true }, 1, "#a66bff"),
+  maleDancer(6.1, -1.5, "VINH VỘI VÃ", "#d9a37c", "#eceaf2", "#276a65", "#1c1c20", "#ff3b5c", { top: "tank", bottom: "shorts", glasses: true }, 1, "#d23b58"),
+  maleDancer(7.4, -1.5, "SINH SUNG SỨC", "#e6b48a", "#3b2618", "#6c4a91", "#f5f5f0", "#ffe600", { top: "floral", bottom: "shorts", chain: true, glasses: true }, 1, "#32826f"),
+  maleDancer(8.7, -1.5, "BÌNH BỪA BÃI", "#e6b48a", "#eceaf2", "#f0ede6", "#1c1c20", "#a66bff", { top: "hoodie", bottom: "shorts" }, 0.88, "#f0ede6"),
 ];
 
 const PODIUM_H = 0.6;
-const BACK_ROW_PODIUM_H = 1.4;
+const BACK_ROW_PODIUM_H = 1.7;
 const STAGE_TOP = 0.5;
 const BACK_ROW_Z = -1.5;
-const BACK_ROW_PLATFORM_WIDTH = 5.7;
+const BACK_ROW_PLATFORM_WIDTH = 5.8;
 
 function GogoPodium({ x, z = 1.4, name, look, light, seed, figureScale = 1 }: { x: number; z?: number; name: string; look: Look; light: string; seed: number; figureScale?: number }) {
   const rig = useMemo(() => {
@@ -370,7 +370,7 @@ function GogoPodium({ x, z = 1.4, name, look, light, seed, figureScale = 1 }: { 
   }, [look]);
   const ring = useRef<THREE.MeshBasicMaterial>(null);
   const dancer = useRef<THREE.Group>(null);
-  useStageTag(dancer, name, light, undefined, 1);
+  useStageTag(dancer, name, light);
   useFigure(rig, look.palette);
   const band = useRef<THREE.MeshBasicMaterial>(null);
   const spotMat = useMemo(() => {
@@ -470,7 +470,7 @@ function BackRowPlatform({ x, color }: { x: number; color: string }) {
 function BackRowDancer({ x, name, look, light, seed, figureScale = 1 }: { x: number; name: string; look: Look; light: string; seed: number; figureScale?: number }) {
   const rig = useMemo(() => createRig(look), [look]);
   const dancer = useRef<THREE.Group>(null);
-  useStageTag(dancer, name, light, undefined, 1);
+  useStageTag(dancer, name, light);
   useFigure(rig, look.palette);
   const spotMat = useMemo(() => {
     const material = beamMaterial(0.3);
@@ -514,8 +514,8 @@ export function StageExtras() {
       {DANCERS.map((d, i) => (
         <GogoPodium key={d.x} x={d.x} z={d.z} name={d.name} look={d.look} light={d.light} seed={i * 0.17} figureScale={d.figureScale} />
       ))}
-      <BackRowPlatform x={-5.25} color="#ff2bd6" />
-      <BackRowPlatform x={5.25} color="#00e5ff" />
+      <BackRowPlatform x={-6.1} color="#ff2bd6" />
+      <BackRowPlatform x={6.1} color="#00e5ff" />
       {BACK_ROW_DANCERS.map((d, i) => (
         <BackRowDancer key={d.name} x={d.x} name={d.name} look={d.look} light={d.light} seed={i} figureScale={d.figureScale} />
       ))}
