@@ -2,6 +2,7 @@
 
 // Audio-only YouTube playback: the IFrame Player lives in an invisible 1x1 box,
 // so the user hears the track while the 3D club stays on screen.
+export const DEFAULT_YOUTUBE_ID = "Lak-hzkXRMU";
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 declare global {
